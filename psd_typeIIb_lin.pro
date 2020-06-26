@@ -102,7 +102,7 @@ pro psd_typeIIb_lin, save=save, postscript=postscript
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './nfar_'+time2file(utimes[0])+'_PSD.eps'
+		setup_ps, './eps/nfar_'+time2file(utimes[0])+'_PSD_lin.eps'
 	endif else begin
 		!p.charsize=1.8
 		window, xs=800, ys=1200
@@ -111,6 +111,11 @@ pro psd_typeIIb_lin, save=save, postscript=postscript
 	;data = 10.0*alog10(data)
 	;data = constbacksub(data, /auto)
 	;data = smooth(data,3)
+	;data = data[0:39999, *]
+	;data = rebin(data, 4000, 1984)
+	;utimes = congrid(utimes, 4000)
+
+	stop
 	;------------------------------------------;
 	;	Empty template to get black ticks
 	;
@@ -147,7 +152,7 @@ pro psd_typeIIb_lin, save=save, postscript=postscript
 	sindices = fltarr(nt+1)
 	loadct, 0
 	;window, 1, xs=600, ys=600	
-	for i=0, nt, 20 do begin
+	for i=0, nt, 10 do begin
 		prof = data[i, *]
 		even_prof = interpol(prof, rads, even_rads)
 		even_prof = even_prof/max(even_prof)
