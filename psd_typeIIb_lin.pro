@@ -23,6 +23,70 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
         freq = reverse(freq)
 end
 
+function fit_psd, frequency, power
+	
+	start = [-1, -1.6]
+        fit = 'p[0] + p[1]*x'
+        err = power
+        err[*]=0.1
+        p = mpfitexpr(fit, frequency, power, err, start, perror = perror, weights=1.0/power, yfit=yfit, bestnorm=bestnorm, dof=dof)
+        perror = perror * SQRT(BESTNORM / DOF)
+        aerr = perror[1]*2.0 ; 2-sigma uncertainty on the slope
+        ierr = perror[0]*2.0 ; 2-sigma uncertainty on the intercept
+
+	return, [p[0], p[1], aerr, ierr]
+
+end
+
+function plot_mean_psd, powers, pfreqs
+
+	mp = mean(powers, dim=2)
+        mf = mean(pfreqs, dim=2)
+	p = fit_psd(mf, mp)
+	aerr = p[2]
+	ierr = p[3]
+
+        pfsim = interpol([mf[0], mf[-1]], 100)
+        powsim = p[0] + p[1]*pfsim
+        set_line_color
+        plot, mf, mp, /xs, /ys, ytitle='log!L10!N(PSD)', xtitle='log!L10!N(k) R!U-1!N', $
+              pos = [0.12, 0.23, 0.48, 0.47], /noerase, thick=5
+        oplot, pfsim, powsim, color=5, thick=6
+
+        powturb = p[0]-0.35 + (-5/3.)*pfsim
+        oplot, pfsim, powturb, linestyle=5, color=7, thick=4
+
+	alpha = cgsymbol('alpha')
+        aerrstr = string(round(aerr*100.0)/100., format='(f4.2)')
+        sindfit = string(round(p[1]*100.0)/100., format='(f6.2)')
+        legend,[alpha+':'+sindfit+'+/-'+aerrstr, alpha+'!L5/3!N'], linestyle=[0,5], color=[5, 7], $
+                box=0, /top, /right, charsize=1.4, thick=[4,4]
+
+        loadct, 0
+        powturb = p[0]+ierr + (p[1]+aerr)*(pfsim)
+        oplot, pfsim, powturb, linestyle=5, color=50, thick=2
+        powturb = p[0]-ierr + (p[1]-aerr)*(pfsim)
+        oplot, pfsim, powturb, linestyle=5, color=50, thick=2
+end
+
+function plot_alpha_hist, sindices
+
+	alpha = cgsymbol('alpha')
+	set_line_color
+        sindices = sindices[where(sindices ne 0)]
+        plothist, sindices, bin=0.025, $
+                xtitle='PSD spectral index '+alpha, ytitle='Count', $
+                pos = [0.59, 0.23, 0.95, 0.47], /noerase, color=0, yr=[0, 450], thick=4
+        meanalpha = string(round(median(sindices)*100.)/100.0, format='(f6.2)')
+        oplot, [meanalpha, meanalpha], [0, 600.0], color=5, thick=5
+        oplot, [-1.66, -1.66], [0, 600.0], color=7, thick=4, linestyle=5
+
+        legend,[cgsymbol('mu')+'!L'+alpha+'!N: '+meanalpha, alpha+'!L5/3!N'], linestyle=[0, 5], color=[5, 7], $
+                box=0, /top, /right, charsize=1.4, thick=[5,4]
+
+end
+
+
 pro psd_typeIIb_lin, save=save, postscript=postscript
 
 	; PSD of second type II. Code working.
@@ -83,7 +147,7 @@ pro psd_typeIIb_lin, save=save, postscript=postscript
 	sindices = fltarr(nt+1)
 	loadct, 0
 	;window, 1, xs=600, ys=600	
-	for i=0, nt, 5 do begin
+	for i=0, nt, 20 do begin
 		prof = data[i, *]
 		even_prof = interpol(prof, rads, even_rads)
 		even_prof = even_prof/max(even_prof)
@@ -105,8 +169,8 @@ pro psd_typeIIb_lin, save=save, postscript=postscript
 		;stop
 
 		result = linfit(pfreq, power)
-		pfsim = interpol([pfreq[0], pfreq[-1]], 100)
-		powsim = result[0] + result[1]*pfsim
+		;pfsim = interpol([pfreq[0], pfreq[-1]], 100)
+		;powsim = result[0] + result[1]*pfsim
 		;set_line_color
 		;plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', xtitle='log!L10!N(k Rs!U-1!N)', $
 		;	title=anytim(utimes[i], /cc)+'  S:'+string(result[1], format='(f5.2)');, yr=[1e8, 1e12]
@@ -126,8 +190,8 @@ pro psd_typeIIb_lin, save=save, postscript=postscript
 
 	;wset, 0
 	set_line_color	
-	sturb=-5/3.
-	alpha=cgsymbol('alpha')
+	sturb = -5/3.
+	alpha = cgsymbol('alpha')
         utplot, utimes, sindices, pos=[0.12, 0.54, 0.95, 0.74], $
                 /noerase, /xs, /ys, yr=[-3, -1.0], $
                 psym=1, symsize=0.5, color=5, xr=[utimes[0], utimes[-1]], $
@@ -140,55 +204,13 @@ pro psd_typeIIb_lin, save=save, postscript=postscript
 	;-----------------------------------;
 	;	Plot mean PSD
 	;
-	mp = mean(powers, dim=2)
-	mf = mean(pfreqs, dim=2)	
-	start = [-1, -1.6]
-	fit = 'p[0] + p[1]*x'
-	err = mp
-	err[*]=0.1
-	p = mpfitexpr(fit, mf, mp, err, start, perror = perror, weights=1.0/mp, yfit=yfit, bestnorm=bestnorm, dof=dof)
-        perror = perror * SQRT(BESTNORM / DOF)
-	aerr = perror[1]*2.0 ; 2-sigma uncertainty on the slope
-	ierr = perror[0]*2.0 ; 2-sigma uncertainty on the intercept
+	result = plot_mean_psd(powers, pfreqs)
 
-
-	pfsim = interpol([mf[0], mf[-1]], 100)
-        powsim = p[0] + p[1]*pfsim
-	set_line_color
-        plot, mf, mp, /xs, /ys, ytitle='log!L10!N(PSD)', xtitle='log!L10!N(k) R!U-1!N', $
-	      pos = [0.12, 0.23, 0.48, 0.47], /noerase, thick=5
-        oplot, pfsim, powsim, color=5, thick=6
-	
-	powturb = p[0]-0.35 + (-5/3.)*pfsim
-	oplot, pfsim, powturb, linestyle=5, color=7, thick=4
-
-
-	aerrstr = string(round(aerr*100.0)/100., format='(f4.2)')	
-	sindfit = string(round(p[1]*100.0)/100., format='(f6.2)')	
-	legend,[alpha+':'+sindfit+'+/-'+aerrstr, alpha+'!L5/3!N'], linestyle=[0,5], color=[5, 7], $
-		box=0, /top, /right, charsize=1.4, thick=[4,4]
-
-	loadct, 0
-        powturb = p[0]+ierr + (p[1]+aerr)*(pfsim)
-        oplot, pfsim, powturb, linestyle=5, color=50, thick=2
-        powturb = p[0]-ierr + (p[1]-aerr)*(pfsim)
-        oplot, pfsim, powturb, linestyle=5, color=50, thick=2
 
 	;-----------------------------------;
 	;   Plot hist of spectral indice
 	;
-	set_line_color
-	sindices = sindices[where(sindices ne 0)]
-	plothist, sindices, bin=0.025, $
-	       	xtitle='PSD spectral index '+alpha, ytitle='Count', $
-		pos = [0.59, 0.23, 0.95, 0.47], /noerase, color=0, yr=[0, 450], thick=4
-	meanalpha = string(round(median(sindices)*100.)/100.0, format='(f6.2)')
-	oplot, [meanalpha, meanalpha], [0, 600.0], color=5, thick=5
-	oplot, [-1.66, -1.66], [0, 600.0], color=7, thick=4, linestyle=5
-
-	legend,[cgsymbol('mu')+'!L'+alpha+'!N: '+meanalpha, alpha+'!L5/3!N'], linestyle=[0, 5], color=[5, 7], $
-		box=0, /top, /right, charsize=1.4, thick=[5,4]
-
+	result = plot_alpha_hist(sindices)
 
 	if keyword_set(postscript) then begin
 		device, /close
