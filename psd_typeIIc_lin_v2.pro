@@ -42,13 +42,20 @@ function plot_alpha_time, utimes, sindices
 
 end
 
-function fit_psd, frequency, power, signif
+function fit_psd, frequency, power, pspecerr=pspecerr
 	
 	start = [-1, -1]
         fit = 'p[0] + p[1]*x'
         err = power
-        err[*] = 0.3
-        p = mpfitexpr(fit, frequency, power, err, start, perror = perror, $
+        err[*] = pspecerr*abs(power)
+
+	; Note here that if I supply the weights keyword with poisson weighting the fit
+	; gives a p-value of 1 for eveything, e.g. perfect fit within error. Every fit
+	; is then accepted below, even a few power spectra that are not power law.
+	; If I give an errors (without the weights) then not everything is accepted. Some
+	; fits are rejected. However, the choice of err here is slightly arbitrary.
+
+        p = mpfitexpr(fit, frequency, power, err, weights=1/err^2, start, perror = perror, $
 		yfit=yfit, bestnorm=bestnorm, dof=dof, /quiet)
         perror = perror * SQRT(BESTNORM / DOF)
         aerr = perror[1]*2.0 ; 2-sigma uncertainty on the slope
@@ -64,11 +71,11 @@ function fit_psd, frequency, power, signif
 
 end
 
-function plot_mean_psd, powers, pfreqs
+function plot_mean_psd, powers, pfreqs, pspecerr
 
 	mp = mean(powers, dim=2)
         mf = mean(pfreqs, dim=2)
-	p = fit_psd(mf, mp)
+	p = fit_psd(mf, mp, pspecerr=pspecerr)
 	aerr = p[2]
 	ierr = p[3]
 
@@ -76,7 +83,7 @@ function plot_mean_psd, powers, pfreqs
         powsim = p[0] + p[1]*pfsim
         set_line_color
         plot, mf, mp, /xs, /ys, ytitle='log!L10!N(PSD)', xtitle='log!L10!N(k) R!U-1!N', $
-              pos = [0.12, 0.23, 0.48, 0.47], /noerase, thick=5
+              pos = [0.12, 0.23, 0.48, 0.47], /noerase, thick=5, XTICKINTERVAL=0.5
         oplot, pfsim, powsim, color=5, thick=6
 
         powturb = p[0]-0.35 + (-5/3.)*pfsim
@@ -117,17 +124,20 @@ function plot_alpha_hist, sindices
 end
 
 
-pro psd_typeIIa_lin, save=save, postscript=postscript, rebin=rebin
+pro psd_typeIIc_lin_v2, save=save, postscript=postscript, rebin=rebin
 
 	; PSD of first type II. Code working.
+
+	; This version of the code excludes certain powerlaw fits based on their p-value.
+
 
 	path = '/databf2/nenufar-tf/ES11/2019/03/20190320_104900_20190320_125000_SUN_TRACKING_BHR/'
         file = 'SUN_TRACKING_20190320_104936_0.spectra'
 
-	t0 = 32.8
-	t1 = 34.2	
+	t0 = 40.0
+	t1 = 43.5	
 	f0 = 21.0
-	f1 = 24.5
+	f1 = 33.0
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 	   
 
@@ -144,7 +154,8 @@ pro psd_typeIIa_lin, save=save, postscript=postscript, rebin=rebin
 
 	if keyword_set(rebin) then begin	
 		nfbin = (size(data))[2]
-		data = data[0:15999, *]
+		data = data[0:39999, *]
+		tbin = 10000
 		data = rebin(data, tbin, nfbin)
 		utimes = congrid(utimes, tbin)
 		ntsteps=1
@@ -191,25 +202,30 @@ pro psd_typeIIa_lin, save=save, postscript=postscript, rebin=rebin
 	loadct, 0
 	window, 1, xs=600, ys=600	
 	set_line_color
+	pspecerr = 0.05
 	for i=0, nt, ntsteps do begin
 		prof = data[i, *]
 		even_prof = interpol(prof, rads, even_rads)
 		even_prof = even_prof/max(even_prof)
 
-		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq, /tukey, width=0.002, SIGNIFICANCE=signif)
+		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq, /tukey, width=0.001, sig_level=0.001, SIGNIFICANCE=signif)
 
+		
 		pfreq = alog10(pfreq)
 		power = alog10(power)
 		ind0 = closest(pfreq, 1.0)
 		ind1 = closest(pfreq, 2.5)
 		pfreq = pfreq[ind0:ind1]
 		power = power[ind0:ind1]
-		signif = signif[ind0:ind1]
+		sigcutoff = alog10(signif[0])
+		;power = power[where(power gt sigcutoff)]
+		;pfreq = pfreq[where(power gt sigcutoff)]
+		
 		;wset, 1
 		;plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(Power Rs!U-1!N)', $
 		;xtitle='log!L10!N(k Rs!U-1!N)';, yr=[1e8, 1e12]
 
-		result = fit_psd(pfreq, power, signif)
+		result = fit_psd(pfreq, power, pspecerr=pspecerr)
 		pvalue = result[4]
 		
 		;print, ' ' 
@@ -223,10 +239,15 @@ pro psd_typeIIa_lin, save=save, postscript=postscript, rebin=rebin
 		if pvalue gt 1.0 then begin	
 			
 			plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', xtitle='log!L10!N(k Rs!U-1!N)', $
-                        	title=anytim(utimes[i], /cc)+'  S:'+string(result[1], format='(f5.2)');, yr=[1e8, 1e12]
-                	oplot, pfsim, powsim, color=10
-                	xyouts, 0.6, 0.8, pvalue, /normal
-		
+                        	title=anytim(utimes[i], /cc)+'  S:'+string(result[1], format='(f5.2)'), psym=5;, yr=[1e8, 1e12]
+                	xerr = dblarr(n_elements(pfreq))
+			yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
+			oploterror, pfreq, power, xerr, yerr
+			oplot, pfsim, powsim, color=10
+                	;oplot, [pfsim[0], pfsim[-1]], [sigcutoff, sigcutoff], color=2
+			
+			xyouts, 0.6, 0.8, pvalue, /normal
+			;wait, 0.01	
 			sindices[i] = result[1]
 			stimes[i] = utimes[i]
 			if vsave eq 0 then begin
@@ -254,7 +275,7 @@ pro psd_typeIIa_lin, save=save, postscript=postscript, rebin=rebin
 	;
 	;	Plot mean PSD
 	;
-	result = plot_mean_psd(powers, pfreqs)
+	result = plot_mean_psd(powers, pfreqs, pspecerr)
 
 
 	;-----------------------------------;
