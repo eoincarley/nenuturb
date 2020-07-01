@@ -23,9 +23,9 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
         freq = reverse(freq)
 end
 
-pro psd_typeIIb, save=save, postscript=postscript
+pro psd_typeIIc, save=save, postscript=postscript
 
-	; PSD of second type II. Code working.
+	; PSD of third type II. Code working.
 
 	path = '/databf2/nenufar-tf/ES11/2019/03/20190320_104900_20190320_125000_SUN_TRACKING_BHR/'
         file = 'SUN_TRACKING_20190320_104936_0.spectra'

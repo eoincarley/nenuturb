@@ -56,11 +56,15 @@ function plot_mean_psd, powers, pfreqs
         powturb = p[0]-0.35 + (-5/3.)*pfsim
         oplot, pfsim, powturb, linestyle=5, color=7, thick=4
 
+	powturb = p[0] + (-7/3.)*pfsim
+        oplot, pfsim, powturb, linestyle=5, color=6, thick=4
+
+
 	alpha = cgsymbol('alpha')
         aerrstr = string(round(aerr*100.0)/100., format='(f4.2)')
         sindfit = string(round(p[1]*100.0)/100., format='(f6.2)')
-        legend,[alpha+':'+sindfit+'+/-'+aerrstr, alpha+'!L5/3!N'], linestyle=[0,5], color=[5, 7], $
-                box=0, /top, /right, charsize=1.4, thick=[4,4]
+        legend,[alpha+':'+sindfit+'+/-'+aerrstr, alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[0,5,5], color=[5, 7, 6], $
+                box=0, /top, /right, charsize=1.4, thick=[4,4,4]
 
         loadct, 0
         powturb = p[0]+ierr + (p[1]+aerr)*(pfsim)
@@ -77,19 +81,20 @@ function plot_alpha_hist, sindices
         plothist, sindices, bin=0.025, $
                 xtitle='PSD spectral index '+alpha, ytitle='Count', $
                 pos = [0.59, 0.23, 0.95, 0.47], /noerase, color=0, yr=[0, 450], thick=4
-        meanalpha = string(round(median(sindices)*100.)/100.0, format='(f6.2)')
+        meanalpha = string(round(median(sindices)*100.)/100.0, format='(f5.2)')
         oplot, [meanalpha, meanalpha], [0, 600.0], color=5, thick=5
         oplot, [-1.66, -1.66], [0, 600.0], color=7, thick=4, linestyle=5
+	oplot, [-2.33, -2.33], [0, 600.0], color=6, thick=4, linestyle=5
 
-        legend,[cgsymbol('mu')+'!L'+alpha+'!N: '+meanalpha, alpha+'!L5/3!N'], linestyle=[0, 5], color=[5, 7], $
-                box=0, /top, /right, charsize=1.4, thick=[5,4]
+        legend,[cgsymbol('mu')+'!L'+alpha+'!N: '+meanalpha, alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[0, 5, 5], color=[5, 7, 6], $
+                box=0, /top, /left, charsize=1.4, thick=[5,4,4]
 
 end
 
 
-pro psd_typeIIb_lin, save=save, postscript=postscript
+pro psd_typeIIc_lin, save=save, postscript=postscript
 
-	; PSD of second type II. Code working.
+	; PSD of third type II. Code working.
 
 	path = '/databf2/nenufar-tf/ES11/2019/03/20190320_104900_20190320_125000_SUN_TRACKING_BHR/'
         file = 'SUN_TRACKING_20190320_104936_0.spectra'
@@ -111,11 +116,12 @@ pro psd_typeIIb_lin, save=save, postscript=postscript
 	;data = 10.0*alog10(data)
 	;data = constbacksub(data, /auto)
 	;data = smooth(data,3)
-	;data = data[0:39999, *]
-	;data = rebin(data, 4000, 1984)
-	;utimes = congrid(utimes, 4000)
+	nfbin = (size(data))[2]
+	data = data[0:39999, *]
+	tbin = 10000
+	data = rebin(data, tbin, nfbin)
+	utimes = congrid(utimes, tbin)
 
-	stop
 	;------------------------------------------;
 	;	Empty template to get black ticks
 	;
@@ -152,12 +158,12 @@ pro psd_typeIIb_lin, save=save, postscript=postscript
 	sindices = fltarr(nt+1)
 	loadct, 0
 	;window, 1, xs=600, ys=600	
-	for i=0, nt, 10 do begin
+	for i=0, nt, 2 do begin
 		prof = data[i, *]
 		even_prof = interpol(prof, rads, even_rads)
 		even_prof = even_prof/max(even_prof)
 
-		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq, /tukey, width=0.001, SIGNIFICANCE=signif)
+		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq, SIGNIFICANCE=signif)
 
 	
 		pfreq = alog10(pfreq)
@@ -195,13 +201,15 @@ pro psd_typeIIb_lin, save=save, postscript=postscript
 
 	;wset, 0
 	set_line_color	
-	sturb = -5/3.
+	sturb0 = -5/3.
+	sturb1 = -7/3.
 	alpha = cgsymbol('alpha')
         utplot, utimes, sindices, pos=[0.12, 0.54, 0.95, 0.74], $
                 /noerase, /xs, /ys, yr=[-3, -1.0], $
                 psym=1, symsize=0.5, color=5, xr=[utimes[0], utimes[-1]], $
 		xtitle='Time (UT)', ytitle='PSD spectral index ('+alpha+')'
-	outplot, [utimes[0], utimes[-1]], [sturb, sturb], linestyle=5, thick=4
+	outplot, [utimes[0], utimes[-1]], [sturb0, sturb0], linestyle=5, thick=4
+	outplot, [utimes[0], utimes[-1]], [sturb1, sturb1], linestyle=5, thick=4
 	legend,[alpha+'!L5/3!N'], linestyle=[5], color=[0], $
                 box=0, /top, /right, charsize=1.4, thick=[4]
 
