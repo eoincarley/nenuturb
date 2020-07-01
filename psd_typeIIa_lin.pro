@@ -23,6 +23,25 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
         freq = reverse(freq)
 end
 
+function plot_alpha_time, utimes, sindices
+	
+	set_line_color
+        sturb0 = -5/3.
+        sturb1 = -7/3.
+        alpha = cgsymbol('alpha')
+        utplot, utimes, sindices, pos=[0.12, 0.54, 0.95, 0.74], $
+                /noerase, /xs, /ys, yr=[-3, -1.0], $
+                psym=1, symsize=0.5, color=5, xr=[utimes[0], utimes[-1]], $
+                xtitle='Time (UT)', ytitle='PSD spectral index ('+alpha+')'
+        outplot, [utimes[0], utimes[-1]], [sturb0, sturb0], linestyle=5, thick=4, color=7
+        outplot, [utimes[0], utimes[-1]], [sturb1, sturb1], linestyle=5, thick=4, color=6
+        outplot, utimes, sindices, psym=1, symsize=0.5, color=5
+        legend,[alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[5, 6], color=[7, 6], $
+                box=0, /top, /right, charsize=1.4, thick=[4, 6]
+
+
+end
+
 function fit_psd, frequency, power
 	
 	start = [-1, -1.6]
@@ -80,7 +99,7 @@ function plot_alpha_hist, sindices
         sindices = sindices[where(sindices ne 0)]
         plothist, sindices, bin=0.025, $
                 xtitle='PSD spectral index '+alpha, ytitle='Count', $
-                pos = [0.59, 0.23, 0.95, 0.47], /noerase, color=0, yr=[0, 450], thick=4
+                pos = [0.59, 0.23, 0.95, 0.47], /noerase, color=0, yr=[0, 250], thick=4
         meanalpha = string(round(median(sindices)*100.)/100.0, format='(f5.2)')
         oplot, [meanalpha, meanalpha], [0, 600.0], color=5, thick=5
         oplot, [-1.66, -1.66], [0, 600.0], color=7, thick=4, linestyle=5
@@ -92,17 +111,17 @@ function plot_alpha_hist, sindices
 end
 
 
-pro psd_typeIIc_lin, save=save, postscript=postscript
+pro psd_typeIIa_lin, save=save, postscript=postscript
 
-	; PSD of third type II. Code working.
+	; PSD of first type II. Code working.
 
 	path = '/databf2/nenufar-tf/ES11/2019/03/20190320_104900_20190320_125000_SUN_TRACKING_BHR/'
         file = 'SUN_TRACKING_20190320_104936_0.spectra'
 
-	t0 = 40.0
-	t1 = 43.5	
+	t0 = 32.8
+	t1 = 34.2	
 	f0 = 21.0
-	f1 = 33.0
+	f1 = 24.5
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 	   
 
@@ -116,12 +135,13 @@ pro psd_typeIIc_lin, save=save, postscript=postscript
 	;data = 10.0*alog10(data)
 	;data = constbacksub(data, /auto)
 	;data = smooth(data,3)
+	
 	nfbin = (size(data))[2]
-	data = data[0:39999, *]
-	tbin = 10000
+	data = data[0:15999, *]
+	tbin = 4000
 	data = rebin(data, tbin, nfbin)
 	utimes = congrid(utimes, tbin)
-
+	;stop
 	;------------------------------------------;
 	;	Empty template to get black ticks
 	;
@@ -158,7 +178,7 @@ pro psd_typeIIc_lin, save=save, postscript=postscript
 	sindices = fltarr(nt+1)
 	loadct, 0
 	;window, 1, xs=600, ys=600	
-	for i=0, nt, 2 do begin
+	for i=0, nt, 1 do begin
 		prof = data[i, *]
 		even_prof = interpol(prof, rads, even_rads)
 		even_prof = even_prof/max(even_prof)
@@ -199,23 +219,15 @@ pro psd_typeIIc_lin, save=save, postscript=postscript
 		;stop	
 	endfor
 
-	;wset, 0
-	set_line_color	
-	sturb0 = -5/3.
-	sturb1 = -7/3.
-	alpha = cgsymbol('alpha')
-        utplot, utimes, sindices, pos=[0.12, 0.54, 0.95, 0.74], $
-                /noerase, /xs, /ys, yr=[-3, -1.0], $
-                psym=1, symsize=0.5, color=5, xr=[utimes[0], utimes[-1]], $
-		xtitle='Time (UT)', ytitle='PSD spectral index ('+alpha+')'
-	outplot, [utimes[0], utimes[-1]], [sturb0, sturb0], linestyle=5, thick=4, color=7
-        outplot, [utimes[0], utimes[-1]], [sturb1, sturb1], linestyle=5, thick=4, color=6
-        outplot, utimes, sindices, psym=1, symsize=0.5, color=5
-        legend,[alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[5, 6], color=[7, 6], $
-                box=0, /top, /right, charsize=1.4, thick=[4, 6]
-	
+	;-----------------------------------;
+	;
+        ;       Plot alpha time series
+        ;
+	result = plot_alpha_time(utimes, sindices)
+
 
 	;-----------------------------------;
+	;
 	;	Plot mean PSD
 	;
 	result = plot_mean_psd(powers, pfreqs)
