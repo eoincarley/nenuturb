@@ -1,4 +1,4 @@
-pro setup_ps, name
+pro setup_ps, name, xsize=xsize, ysize=ysize
   
    set_plot,'ps'
    !p.font=0
@@ -7,8 +7,8 @@ pro setup_ps, name
           /color, $
           /helvetica, $
           /inches, $
-          xsize=10, $
-          ysize=14, $
+          xsize=xsize, $
+          ysize=ysize, $
           /encapsulate, $
           yoffset=5, $
           bits_per_pixel = 16
@@ -31,12 +31,13 @@ function plot_alpha_time, utimes, sindices
         alpha = cgsymbol('alpha')
         utplot, utimes, sindices, pos=[0.12, 0.54, 0.95, 0.74], $
                 /noerase, /xs, /ys, yr=[-3, -1.0], $
-                psym=1, symsize=0.5, color=5, xr=[utimes[0], utimes[-1]], $
+                psym=1, symsize=0.8, color=5, xr=[utimes[0], utimes[-1]], $
                 xtitle='Time (UT)', ytitle='PSD spectral index ('+alpha+')'
+
         outplot, [utimes[0], utimes[-1]], [sturb0, sturb0], linestyle=5, thick=4, color=7
-        outplot, [utimes[0], utimes[-1]], [sturb1, sturb1], linestyle=5, thick=4, color=6
+        outplot, [utimes[0], utimes[-1]], [sturb1, sturb1], linestyle=0, thick=4, color=6
         outplot, utimes, sindices, psym=1, symsize=0.5, color=5
-        legend,[alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[5, 6], color=[7, 6], $
+        legend,[alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[5, 0], color=[7, 6], $
                 box=0, /top, /right, charsize=1.4, thick=[4, 6]
 
 
@@ -73,6 +74,9 @@ end
 
 function plot_mean_psd, powers, pfreqs, pspecerr
 
+
+	setup_ps, './eps/nfar_typeIIc_mean_PSD_lin.eps', xsize=7, ysize=7
+
 	mp = mean(powers, dim=2)
         mf = mean(pfreqs, dim=2)
 	p = fit_psd(mf, mp, pspecerr=pspecerr)
@@ -83,7 +87,7 @@ function plot_mean_psd, powers, pfreqs, pspecerr
         powsim = p[0] + p[1]*pfsim
         set_line_color
         plot, mf, mp, /xs, /ys, ytitle='log!L10!N(PSD)', xtitle='log!L10!N(k) R!U-1!N', $
-              pos = [0.12, 0.23, 0.48, 0.47], /noerase, thick=5, XTICKINTERVAL=0.5
+              pos = [0.15, 0.15, 0.9, 0.9], /noerase, thick=5, XTICKINTERVAL=0.5
         oplot, pfsim, powsim, color=5, thick=6
 
         powturb = p[0]-0.35 + (-5/3.)*pfsim
@@ -104,6 +108,10 @@ function plot_mean_psd, powers, pfreqs, pspecerr
         oplot, pfsim, powturb, linestyle=5, color=50, thick=2
         powturb = p[0]-ierr + (p[1]-aerr)*(pfsim)
         oplot, pfsim, powturb, linestyle=5, color=50, thick=2
+
+        device, /close
+        set_plot, 'x'	
+	
 end
 
 function plot_alpha_hist, sindices
@@ -120,7 +128,7 @@ function plot_alpha_hist, sindices
 
         legend,[cgsymbol('mu')+'!L'+alpha+'!N: '+meanalpha, alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[0, 5, 5], color=[5, 7, 6], $
                 box=0, /top, /left, charsize=1.4, thick=[5,4,4]
-
+ 	
 end
 
 function plot_all_psd, pfreqs, powers, times
@@ -143,7 +151,7 @@ function plot_all_psd, pfreqs, powers, times
 	
 	trange = (times - times[0])/60.0
 	cgCOLORBAR, range=[trange[0], trange[-1]],  POSITION=[0.12, 0.43, 0.48, 0.45], $
-		title='Mins after '+anytim(times[0], /cc, /trun), /top, charsize=0.7
+		title='Mins after '+anytim(times[0], /cc, /trun), /top, charsize=1.0
 
 END
 
@@ -166,7 +174,7 @@ pro psd_typeIIc_lin_v2, save=save, postscript=postscript, rebin=rebin
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/nfar_'+time2file(utimes[0])+'_PSD_lin.eps'
+		setup_ps, './eps/nfar_'+time2file(utimes[0])+'_PSD_lin.eps', xsize=10, ysize=14
 	endif else begin
 		!p.charsize=1.8
 		window, xs=800, ys=1200
@@ -295,20 +303,14 @@ pro psd_typeIIc_lin_v2, save=save, postscript=postscript, rebin=rebin
         ;
 	result = plot_alpha_time(stimes, sindices)
 
-
 	;-----------------------------------;
 	;
-	;	Plot mean PSD
-	;
-	;result = plot_mean_psd(powers, pfreqs, pspecerr)
-
-
-	;-----------------------------------;
-	;   Plot hist of spectral indice
+	;   	Plot hist of spectral indices
 	;
 	result = plot_alpha_hist(sindices)
 
 	;----------------------------------;
+	;
 	;	Plot all psd
 	;
 	result = plot_all_psd(pfreqs, powers, stimes)
@@ -318,6 +320,10 @@ pro psd_typeIIc_lin_v2, save=save, postscript=postscript, rebin=rebin
 		set_plot, 'x'
 	endif	
 	  
-
+ 	;-----------------------------------;
+        ;
+        ;       Plot mean PSD
+        ;
+        result = plot_mean_psd(powers, pfreqs, pspecerr)
 stop
 END
