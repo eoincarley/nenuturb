@@ -8,7 +8,7 @@ pro setup_ps, name, xsize=xsize, ysize=ysize
           /helvetica, $
           /inches, $
           xsize=xsize, $
-          ysize=xsize, $
+          ysize=ysize, $
           /encapsulate, $
           yoffset=5, $
           bits_per_pixel = 16
@@ -72,11 +72,10 @@ function fit_psd, frequency, power, pspecerr=pspecerr
 
 end
 
-
 function plot_mean_psd, powers, pfreqs, pspecerr
 
 
-	setup_ps, './eps/nfar_typeIIc_mean_PSD_lin.eps', xsize=7, ysize=7
+	;setup_ps, './eps/nfar_typeIIc_mean_PSD_lin.eps', xsize=7, ysize=7
 
 	mp = mean(powers, dim=2)
         mf = mean(pfreqs, dim=2)
@@ -110,8 +109,8 @@ function plot_mean_psd, powers, pfreqs, pspecerr
         powturb = p[0]-ierr + (p[1]-aerr)*(pfsim)
         oplot, pfsim, powturb, linestyle=1, color=50, thick=4
 
-        device, /close
-        set_plot, 'x'	
+        ;device, /close
+        ;set_plot, 'x'	
 	
 end
 
@@ -121,7 +120,7 @@ function plot_alpha_hist, sindices
 	set_line_color
         plothist, sindices, bin=0.025, $
                 xtitle='PSD spectral index '+alpha, ytitle='Count', $
-                pos = [0.59, 0.23, 0.95, 0.47], /noerase, color=0, yr=[0, 250], thick=4
+                pos = [0.59, 0.18, 0.95, 0.42], /noerase, color=0, yr=[0, 250], thick=4
         meanalpha = string(round(median(sindices)*100.)/100.0, format='(f5.2)')
         oplot, [meanalpha, meanalpha], [0, 600.0], color=5, thick=5
         oplot, [-1.66, -1.66], [0, 600.0], color=7, thick=4, linestyle=5
@@ -129,7 +128,7 @@ function plot_alpha_hist, sindices
 
         legend,[cgsymbol('mu')+'!L'+alpha+'!N: '+meanalpha, alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[0, 5, 5], color=[5, 7, 6], $
                 box=0, /top, /left, charsize=1.4, thick=[5,4,4]
-
+ 	
 end
 
 function plot_all_psd, pfreqs, powers, times
@@ -141,7 +140,7 @@ function plot_all_psd, pfreqs, powers, times
 	loadct, 0	
 	;wset, 0
 	;window, 1, xs=400, ys=400
-	plot, [1, 2.5], [-6, -1], /nodata, /xs, /ys, ytitle='log!L10!N(PSD)', $
+	plot, [1, 2.5], [-6, -2], /nodata, /xs, /ys, ytitle='log!L10!N(PSD)', $
               xtitle='log!L10!N(k) Rs!U-1!N', pos = [0.12, 0.18, 0.48, 0.42], /noerase
 
 	loadct, 72
@@ -156,7 +155,8 @@ function plot_all_psd, pfreqs, powers, times
 
 END
 
-pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
+
+pro psd_bg_lin_v2, save=save, postscript=postscript, rebin=rebin
 
 	; PSD of first type II. Code working.
 
@@ -166,15 +166,15 @@ pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
 	path = '/databf2/nenufar-tf/ES11/2019/03/20190320_104900_20190320_125000_SUN_TRACKING_BHR/'
         file = 'SUN_TRACKING_20190320_104936_0.spectra'
 
-	t0 = 33.0
-	t1 = 34.2
-	f0 = 21.0
-	f1 = 24.0
+	t0 = 40.0
+	t1 = 43.5	
+	f0 = 33.0
+	f1 = 55.0
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/nfar_'+time2file(utimes[0])+'_PSD_lin.eps'
+		setup_ps, './eps/nfar_'+time2file(utimes[0])+'_PSD_lin.eps', xsize=10, ysize=14
 	endif else begin
 		!p.charsize=1.8
 		window, xs=800, ys=1200
@@ -186,8 +186,8 @@ pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
 
 	if keyword_set(rebin) then begin	
 		nfbin = (size(data))[2]
-		data = data[0:11999, *]
-		tbin = 3000
+		data = data[0:39999, *]
+		tbin = 10000
 		data = rebin(data, tbin, nfbin)
 		utimes = congrid(utimes, tbin)
 		ntsteps=1
@@ -233,15 +233,15 @@ pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
 	vsave=0
 	loadct, 0
 	window, 1, xs=600, ys=600	
-
+	
 	pspecerr = 0.05
 	for i=0, nt, ntsteps do begin
 		prof = data[i, *]
 		even_prof = interpol(prof, rads, even_rads)
 		even_prof = even_prof/max(even_prof)
 
-		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq, $
-			/tukey, width=0.002, sig_level=0.001, SIGNIFICANCE=signif)
+		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$ 
+			/tukey, width=0.001, sig_level=0.001, SIGNIFICANCE=signif)
 
 		
 		pfreq = alog10(pfreq)
@@ -273,16 +273,18 @@ pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
 			
 			plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
 				xtitle='log!L10!N(k Rs!U-1!N)', $
-                        ;	title=anytim(utimes[i], /cc)+'  S:'+string(result[1], format='(f5.2)'), $
-				yr=[-6, -1];, /noerase, color=colors[i], psym=1
+                        	title=anytim(utimes[i], /cc)+'  S:'+string(result[1], format='(f5.2)'), $
+				yr=[-6, -2];, /noerase, color=colors[i], psym=1
                 	
 			xerr = dblarr(n_elements(pfreq))
 			yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
-			
 			oploterror, pfreq, power, xerr, yerr
-			oplot, pfsim, powsim, color=100
+			oplot, pfsim, powsim, color=100, thick=2
 			xyouts, 0.6, 0.8, pvalue, /normal
-			wait, 0.1	
+
+
+			wait, 0.1
+
 			sindices[i] = result[1]
 			stimes[i] = utimes[i]
 			if vsave eq 0 then begin
@@ -295,14 +297,13 @@ pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
 			endelse	
 		endif 	
 	endfor
-	wset, 0
+
 	sindices = sindices[where(sindices ne 0)]	
 	stimes = stimes[where(stimes ne 0)]
-	
 	;-----------------------------------;
 	;
-    	;       Plot alpha time series
-    	;
+        ;       Plot alpha time series
+        ;
 	result = plot_alpha_time(stimes, sindices)
 
 	;-----------------------------------;
@@ -321,12 +322,11 @@ pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
 		device, /close
 		set_plot, 'x'
 	endif	
-	  
+	window, 1, xs=500, ys=500  
  	;-----------------------------------;
-    	;
-    	;       Plot mean PSD
-    	;
-    	result = plot_mean_psd(powers, pfreqs, pspecerr)
-
+        ;
+        ;       Plot mean PSD
+        ;
+        result = plot_mean_psd(powers, pfreqs, pspecerr)
 stop
 END

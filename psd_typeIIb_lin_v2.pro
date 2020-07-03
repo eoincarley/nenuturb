@@ -167,9 +167,9 @@ pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
         file = 'SUN_TRACKING_20190320_104936_0.spectra'
 
 	t0 = 33.0
-	t1 = 34.2
-	f0 = 21.0
-	f1 = 24.0
+	t1 = 34.5
+	f0 = 30.0
+	f1 = 55.0
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 	   
 
@@ -186,8 +186,8 @@ pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
 
 	if keyword_set(rebin) then begin	
 		nfbin = (size(data))[2]
-		data = data[0:11999, *]
-		tbin = 3000
+		data = data[0:15999, *]
+		tbin = 8000
 		data = rebin(data, tbin, nfbin)
 		utimes = congrid(utimes, tbin)
 		ntsteps=1
