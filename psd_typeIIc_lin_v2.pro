@@ -88,26 +88,26 @@ function plot_mean_psd, powers, pfreqs, pspecerr
         set_line_color
         plot, mf, mp, /xs, /ys, ytitle='log!L10!N(PSD)', xtitle='log!L10!N(k) R!U-1!N', $
               pos = [0.15, 0.15, 0.9, 0.9], /noerase, thick=5, XTICKINTERVAL=0.5
-        oplot, pfsim, powsim, color=5, thick=6
+        oplot, pfsim, powsim, color=5, thick=8
 
-        powturb = p[0]-0.35 + (-5/3.)*pfsim
-        oplot, pfsim, powturb, linestyle=5, color=7, thick=4
+        powturb = p[0]-0.55 + (-5/3.)*pfsim
+        oplot, pfsim, powturb, linestyle=5, color=7, thick=8
 
-	powturb = p[0]+0.3 + (-7/3.)*pfsim
-        oplot, pfsim, powturb, linestyle=5, color=6, thick=4
+	powturb = p[0]+0.1 + (-7/3.)*pfsim
+        oplot, pfsim, powturb, linestyle=5, color=6, thick=8
 
 
 	alpha = cgsymbol('alpha')
         aerrstr = string(round(aerr*100.0)/100., format='(f4.2)')
         sindfit = string(round(p[1]*100.0)/100., format='(f6.2)')
         legend,[alpha+':'+sindfit+'+/-'+aerrstr, alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[0,5,5], color=[5, 7, 6], $
-                box=0, /top, /right, charsize=1.4, thick=[4,4,4]
+                box=0, /top, /right, charsize=1.6, thick=[4,4,4]
 
         loadct, 0
         powturb = p[0]+ierr + (p[1]+aerr)*(pfsim)
-        oplot, pfsim, powturb, linestyle=5, color=50, thick=2
+        oplot, pfsim, powturb, linestyle=1, color=50, thick=4
         powturb = p[0]-ierr + (p[1]-aerr)*(pfsim)
-        oplot, pfsim, powturb, linestyle=5, color=50, thick=2
+        oplot, pfsim, powturb, linestyle=1, color=50, thick=4
 
         device, /close
         set_plot, 'x'	
@@ -140,8 +140,8 @@ function plot_all_psd, pfreqs, powers, times
 	loadct, 0	
 	;wset, 0
 	;window, 1, xs=400, ys=400
-	plot, [1, 2.5], [-6, -2], /nodata, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
-              xtitle='log!L10!N(k Rs!U-1!N)', pos = [0.12, 0.18, 0.48, 0.42], /noerase
+	plot, [1, 2.5], [-6, -2], /nodata, /xs, /ys, ytitle='log!L10!N(PSD)', $
+              xtitle='log!L10!N(k) Rs!U-1!N', pos = [0.12, 0.18, 0.48, 0.42], /noerase
 
 	loadct, 72
 	reverse_ct	
