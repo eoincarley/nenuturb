@@ -89,7 +89,7 @@ function plot_mean_psd, powers, pfreqs, pspecerr
         powturb = p[0]-0.35 + (-5/3.)*pfsim
         oplot, pfsim, powturb, linestyle=5, color=7, thick=4
 
-	powturb = p[0] + (-7/3.)*pfsim
+	powturb = p[0]+0.3 + (-7/3.)*pfsim
         oplot, pfsim, powturb, linestyle=5, color=6, thick=4
 
 
@@ -112,7 +112,7 @@ function plot_alpha_hist, sindices
 	set_line_color
         plothist, sindices, bin=0.025, $
                 xtitle='PSD spectral index '+alpha, ytitle='Count', $
-                pos = [0.59, 0.23, 0.95, 0.47], /noerase, color=0, yr=[0, 250], thick=4
+                pos = [0.59, 0.18, 0.95, 0.42], /noerase, color=0, yr=[0, 250], thick=4
         meanalpha = string(round(median(sindices)*100.)/100.0, format='(f5.2)')
         oplot, [meanalpha, meanalpha], [0, 600.0], color=5, thick=5
         oplot, [-1.66, -1.66], [0, 600.0], color=7, thick=4, linestyle=5
@@ -122,6 +122,30 @@ function plot_alpha_hist, sindices
                 box=0, /top, /left, charsize=1.4, thick=[5,4,4]
 
 end
+
+function plot_all_psd, pfreqs, powers, times
+
+	; Plot all spectra over time
+	ntimes = n_elements(powers[0,*])
+	colors = interpol([0,255], ntimes)
+	
+	loadct, 0	
+	;wset, 0
+	;window, 1, xs=400, ys=400
+	plot, [1, 2.5], [-6, -2], /nodata, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
+              xtitle='log!L10!N(k Rs!U-1!N)', pos = [0.12, 0.18, 0.48, 0.42], /noerase
+
+	loadct, 72
+	reverse_ct	
+	for i=ntimes-1, 0, -1 do begin
+		oplot, pfreqs[*, i], powers[*, i], psym=1, color=colors[i], symsize=0.3
+	endfor
+	
+	trange = (times - times[0])/60.0
+	cgCOLORBAR, range=[trange[0], trange[-1]],  POSITION=[0.12, 0.43, 0.48, 0.45], $
+		title='Mins after '+anytim(times[0], /cc, /trun), /top, charsize=0.7
+
+END
 
 
 pro psd_typeIIc_lin_v2, save=save, postscript=postscript, rebin=rebin
@@ -200,15 +224,16 @@ pro psd_typeIIc_lin_v2, save=save, postscript=postscript, rebin=rebin
 	stimes = dblarr(nt+1)
 	vsave=0
 	loadct, 0
-	window, 1, xs=600, ys=600	
-	set_line_color
+	;window, 1, xs=600, ys=600	
+	
 	pspecerr = 0.05
 	for i=0, nt, ntsteps do begin
 		prof = data[i, *]
 		even_prof = interpol(prof, rads, even_rads)
 		even_prof = even_prof/max(even_prof)
 
-		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq, /tukey, width=0.001, sig_level=0.001, SIGNIFICANCE=signif)
+		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$ 
+			/tukey, width=0.001, sig_level=0.001, SIGNIFICANCE=signif)
 
 		
 		pfreq = alog10(pfreq)
@@ -238,16 +263,17 @@ pro psd_typeIIc_lin_v2, save=save, postscript=postscript, rebin=rebin
 
 		if pvalue gt 1.0 then begin	
 			
-			plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', xtitle='log!L10!N(k Rs!U-1!N)', $
-                        	title=anytim(utimes[i], /cc)+'  S:'+string(result[1], format='(f5.2)'), psym=5;, yr=[1e8, 1e12]
-                	xerr = dblarr(n_elements(pfreq))
+			;plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
+			;	xtitle='log!L10!N(k Rs!U-1!N)', $
+                        ;	title=anytim(utimes[i], /cc)+'  S:'+string(result[1], format='(f5.2)'), $
+			;	yr=[-6, -2];, /noerase, color=colors[i], psym=1
+                	
+			xerr = dblarr(n_elements(pfreq))
 			yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
-			oploterror, pfreq, power, xerr, yerr
-			oplot, pfsim, powsim, color=10
-                	;oplot, [pfsim[0], pfsim[-1]], [sigcutoff, sigcutoff], color=2
+			;oploterror, pfreq, power, xerr, yerr
+			;oplot, pfsim, powsim, color=10
+			;xyouts, 0.6, 0.8, pvalue, /normal
 			
-			xyouts, 0.6, 0.8, pvalue, /normal
-			;wait, 0.01	
 			sindices[i] = result[1]
 			stimes[i] = utimes[i]
 			if vsave eq 0 then begin
@@ -263,7 +289,6 @@ pro psd_typeIIc_lin_v2, save=save, postscript=postscript, rebin=rebin
 
 	sindices = sindices[where(sindices ne 0)]	
 	stimes = stimes[where(stimes ne 0)]
-	wset, 0
 	;-----------------------------------;
 	;
         ;       Plot alpha time series
@@ -275,13 +300,18 @@ pro psd_typeIIc_lin_v2, save=save, postscript=postscript, rebin=rebin
 	;
 	;	Plot mean PSD
 	;
-	result = plot_mean_psd(powers, pfreqs, pspecerr)
+	;result = plot_mean_psd(powers, pfreqs, pspecerr)
 
 
 	;-----------------------------------;
 	;   Plot hist of spectral indice
 	;
 	result = plot_alpha_hist(sindices)
+
+	;----------------------------------;
+	;	Plot all psd
+	;
+	result = plot_all_psd(pfreqs, powers, stimes)
 
 	if keyword_set(postscript) then begin
 		device, /close
