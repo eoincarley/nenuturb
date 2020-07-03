@@ -90,10 +90,10 @@ function plot_mean_psd, powers, pfreqs, pspecerr
               pos = [0.15, 0.15, 0.9, 0.9], /noerase, thick=5, XTICKINTERVAL=0.5
         oplot, pfsim, powsim, color=5, thick=8
 
-        powturb = p[0]-0.55 + (-5/3.)*pfsim
+        powturb = p[0]-0.45 + (-5/3.)*pfsim
         oplot, pfsim, powturb, linestyle=5, color=7, thick=8
 
-	powturb = p[0]+0.1 + (-7/3.)*pfsim
+	powturb = p[0]+0.2 + (-7/3.)*pfsim
         oplot, pfsim, powturb, linestyle=5, color=6, thick=8
 
 
