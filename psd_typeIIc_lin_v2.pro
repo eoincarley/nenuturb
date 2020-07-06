@@ -156,7 +156,7 @@ function plot_all_psd, pfreqs, powers, times
 END
 
 
-pro psd_typeIIc_lin_v2, save=save, postscript=postscript, rebin=rebin
+pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
 
 	; PSD of first type II. Code working.
 
@@ -232,7 +232,9 @@ pro psd_typeIIc_lin_v2, save=save, postscript=postscript, rebin=rebin
 	stimes = dblarr(nt+1)
 	vsave=0
 	loadct, 0
-	;window, 1, xs=600, ys=600	
+
+	if ~keyword_set(postscript) then $
+		window, 1, xs=600, ys=600	
 	
 	pspecerr = 0.05
 	for i=0, nt, ntsteps do begin
@@ -241,7 +243,7 @@ pro psd_typeIIc_lin_v2, save=save, postscript=postscript, rebin=rebin
 		even_prof = even_prof/max(even_prof)
 
 		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$ 
-			/tukey, width=0.001, sig_level=0.001, SIGNIFICANCE=signif)
+			/tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)
 
 		
 		pfreq = alog10(pfreq)
@@ -269,18 +271,23 @@ pro psd_typeIIc_lin_v2, save=save, postscript=postscript, rebin=rebin
 		pfsim = interpol([pfreq[0], pfreq[-1]], 100)
 		powsim = result[0] + result[1]*pfsim
 
-		if pvalue gt 1.0 then begin	
+		if pvalue gt 5.0 then begin	
 			
-			;plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
-			;	xtitle='log!L10!N(k Rs!U-1!N)', $
-                        ;	title=anytim(utimes[i], /cc)+'  S:'+string(result[1], format='(f5.2)'), $
-			;	yr=[-6, -2];, /noerase, color=colors[i], psym=1
+			if keyword_set(plot_ipsd) then begin
+			plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
+				xtitle='log!L10!N(k Rs!U-1!N)', $
+                        	title=anytim(utimes[i], /cc)+'  S:'+string(result[1], format='(f5.2)'), $
+				yr=[-6, -2];, /noerase, color=colors[i], psym=1
                 	
 			xerr = dblarr(n_elements(pfreq))
 			yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
-			;oploterror, pfreq, power, xerr, yerr
-			;oplot, pfsim, powsim, color=10
-			;xyouts, 0.6, 0.8, pvalue, /normal
+			oploterror, pfreq, power, xerr, yerr
+			oplot, pfsim, powsim, color=10
+			oplot, [1.0, 2.5], [sigcutoff, sigcutoff], color=200
+			;wait, 0.001	
+			
+			xyouts, 0.6, 0.8, pvalue, /normal
+			endif
 			
 			sindices[i] = result[1]
 			stimes[i] = utimes[i]
@@ -295,6 +302,7 @@ pro psd_typeIIc_lin_v2, save=save, postscript=postscript, rebin=rebin
 		endif 	
 	endfor
 
+	if ~keyword_set(postscript) then wset, 0
 	sindices = sindices[where(sindices ne 0)]	
 	stimes = stimes[where(stimes ne 0)]
 	;-----------------------------------;
