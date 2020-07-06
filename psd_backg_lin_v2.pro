@@ -75,7 +75,7 @@ end
 function plot_mean_psd, powers, pfreqs, pspecerr, postscript=postscript
 
 	if keyword_set(postscript) then begin
-                setup_ps, './eps/nfar_20190320_mean_PSD_bg_lin.eps', xsize=10, ysize=14
+                setup_ps, './eps/nfar_bg_mean_PSD_lin.eps', xsize=7, ysize=7
         endif else begin
 		window, 1, xs=500, ys=500
 	endelse	
@@ -164,7 +164,7 @@ function plot_all_psd, pfreqs, powers, times
 END
 
 
-pro psd_bg_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
+pro psd_backg_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
 
 	; PSD of first type II. Code working.
 
