@@ -121,8 +121,10 @@ function plot_alpha_hist, sindices
 	set_line_color
         plothist, sindices, bin=0.025, $
                 xtitle='PSD spectral index '+alpha, ytitle='Count', $
-                pos = [0.59, 0.23, 0.95, 0.47], /noerase, color=0, yr=[0, 250], thick=4
-        meanalpha = string(round(median(sindices)*100.)/100.0, format='(f5.2)')
+                pos = [0.59, 0.23, 0.95, 0.47], /noerase, color=0, yr=[0, 50], thick=4
+	       
+       
+	meanalpha = string(round(median(sindices)*100.)/100.0, format='(f5.2)')
         oplot, [meanalpha, meanalpha], [0, 600.0], color=5, thick=5
         oplot, [-1.66, -1.66], [0, 600.0], color=7, thick=4, linestyle=5
 	oplot, [-2.33, -2.33], [0, 600.0], color=6, thick=4, linestyle=5
@@ -141,8 +143,8 @@ function plot_all_psd, pfreqs, powers, times
 	loadct, 0	
 	;wset, 0
 	;window, 1, xs=400, ys=400
-	plot, [1, 2.5], [-6, -1], /nodata, /xs, /ys, ytitle='log!L10!N(PSD)', $
-              xtitle='log!L10!N(k) Rs!U-1!N', pos = [0.12, 0.18, 0.48, 0.42], /noerase
+	plot, [1, 2.5], [-5, -2], /nodata, /xs, /ys, ytitle='log!L10!N(PSD)', $
+              xtitle='log!L10!N(k) Rs!U-1!N', pos = [0.12, 0.23, 0.48, 0.47], /noerase
 
 	loadct, 72
 	reverse_ct	
@@ -151,12 +153,12 @@ function plot_all_psd, pfreqs, powers, times
 	endfor
 	
 	trange = (times - times[0])/60.0
-	cgCOLORBAR, range=[trange[0], trange[-1]],  POSITION=[0.12, 0.43, 0.48, 0.45], $
+	cgCOLORBAR, range=[trange[0], trange[-1]],  POSITION=[0.12, 0.48, 0.48, 0.49], $
 		title='Mins after '+anytim(times[0], /cc, /trun), /top, charsize=1.0
 
 END
 
-pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
+pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
 
 	; PSD of first type II. Code working.
 
@@ -232,7 +234,9 @@ pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
 	stimes = dblarr(nt+1)
 	vsave=0
 	loadct, 0
-	window, 1, xs=600, ys=600	
+
+	if ~keyword_set(postscript) then $
+		window, 1, xs=600, ys=600	
 
 	pspecerr = 0.05
 	for i=0, nt, ntsteps do begin
@@ -241,7 +245,7 @@ pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
 		even_prof = even_prof/max(even_prof)
 
 		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq, $
-			/tukey, width=0.002, sig_level=0.001, SIGNIFICANCE=signif)
+			/tukey, width=0.002, sig_level=0.05, SIGNIFICANCE=signif)
 
 		
 		pfreq = alog10(pfreq)
@@ -251,12 +255,6 @@ pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
 		pfreq = pfreq[ind0:ind1]
 		power = power[ind0:ind1]
 		sigcutoff = alog10(signif[0])
-		;power = power[where(power gt sigcutoff)]
-		;pfreq = pfreq[where(power gt sigcutoff)]
-		
-		;wset, 1
-		;plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(Power Rs!U-1!N)', $
-		;xtitle='log!L10!N(k Rs!U-1!N)';, yr=[1e8, 1e12]
 
 		result = fit_psd(pfreq, power, pspecerr=pspecerr)
 		pvalue = result[4]
@@ -269,8 +267,9 @@ pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
 		pfsim = interpol([pfreq[0], pfreq[-1]], 100)
 		powsim = result[0] + result[1]*pfsim
 
-		if pvalue gt 1.0 then begin	
-			
+		if pvalue gt 5.0 then begin	
+
+			if keyword_set(plot_ipsd) then begin	
 			plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
 				xtitle='log!L10!N(k Rs!U-1!N)', $
                         ;	title=anytim(utimes[i], /cc)+'  S:'+string(result[1], format='(f5.2)'), $
@@ -278,11 +277,15 @@ pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
                 	
 			xerr = dblarr(n_elements(pfreq))
 			yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
-			
 			oploterror, pfreq, power, xerr, yerr
 			oplot, pfsim, powsim, color=100
 			xyouts, 0.6, 0.8, pvalue, /normal
+			oplot, [1.0, 2.5], [sigcutoff, sigcutoff], color=200
+		
+			;stop	
 			wait, 0.1	
+			endif
+
 			sindices[i] = result[1]
 			stimes[i] = utimes[i]
 			if vsave eq 0 then begin
@@ -295,7 +298,9 @@ pro psd_typeIIa_lin_v2, save=save, postscript=postscript, rebin=rebin
 			endelse	
 		endif 	
 	endfor
-	wset, 0
+	
+	if ~keyword_set(postscript) then wset, 0
+	
 	sindices = sindices[where(sindices ne 0)]	
 	stimes = stimes[where(stimes ne 0)]
 	
