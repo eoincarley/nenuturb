@@ -121,7 +121,7 @@ function plot_alpha_hist, sindices
 	set_line_color
         plothist, sindices, bin=0.025, $
                 xtitle='PSD spectral index '+alpha, ytitle='Count', $
-                pos = [0.59, 0.23, 0.95, 0.47], /noerase, color=0, yr=[0, 50], thick=4
+                pos = [0.59, 0.18, 0.95, 0.42], /noerase, color=0, yr=[0, 50], thick=4
 	       
        
 	meanalpha = string(round(median(sindices)*100.)/100.0, format='(f5.2)')
@@ -144,7 +144,7 @@ function plot_all_psd, pfreqs, powers, times
 	;wset, 0
 	;window, 1, xs=400, ys=400
 	plot, [1, 2.5], [-6, -2], /nodata, /xs, /ys, ytitle='log!L10!N(PSD)', $
-              xtitle='log!L10!N(k) Rs!U-1!N', pos = [0.12, 0.23, 0.48, 0.47], /noerase
+              xtitle='log!L10!N(k) Rs!U-1!N', pos = [0.12, 0.18, 0.48, 0.42], /noerase
 
 	loadct, 72
 	reverse_ct	
@@ -153,7 +153,7 @@ function plot_all_psd, pfreqs, powers, times
 	endfor
 	
 	trange = (times - times[0])/60.0
-	cgCOLORBAR, range=[trange[0], trange[-1]],  POSITION=[0.12, 0.48, 0.48, 0.49], $
+	cgCOLORBAR, range=[trange[0], trange[-1]],  POSITION=[0.12, 0.43, 0.48, 0.45], $
 		title='Mins after '+anytim(times[0], /cc, /trun), /top, charsize=1.0
 
 END
@@ -177,7 +177,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/nfar_PSD_lin_typeIIa.eps'
+		setup_ps, './eps/nfar_PSD_lin_typeIIa.eps', xsize=10, ysize=14
 	endif else begin
 		!p.charsize=1.8
 		window, xs=800, ys=1200
