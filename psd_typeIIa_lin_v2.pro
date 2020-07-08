@@ -29,10 +29,11 @@ function plot_alpha_time, utimes, sindices
         sturb0 = -5/3.
         sturb1 = -7/3.
         alpha = cgsymbol('alpha')
+
         utplot, utimes, sindices, pos=[0.12, 0.54, 0.95, 0.74], $
                 /noerase, /xs, /ys, yr=[-3, -1.0], $
                 psym=1, symsize=0.8, color=5, xr=[utimes[0], utimes[-1]], $
-                xtitle='Time (UT)', ytitle='PSD spectral index ('+alpha+')'
+                xtitle='Time (UT)', ytitle='PSD spectral index ('+alpha+')', xticks=7
 
         outplot, [utimes[0], utimes[-1]], [sturb0, sturb0], linestyle=5, thick=4, color=7
         outplot, [utimes[0], utimes[-1]], [sturb1, sturb1], linestyle=0, thick=4, color=6
@@ -205,7 +206,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	loadct, 0
         utplot, utimes, freq, yr=[f1,f0], /xs, /ys, xtitle=' ', ytitle='Frequency (MHz)', $
 		title='NenuFAR-ES11 '+time2file(utimes[0], /date), pos=posit, /normal, color=150, $
-		xr=[utimes[0], utimes[-1]], XTICKFORMAT="(A1)"
+		xr=[utimes[0], utimes[-1]]
 	
         ;------------------------------------------;
 	;	     Plot spectrogram
@@ -309,7 +310,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	;
     	;       Plot alpha time series
     	;
-	result = plot_alpha_time(stimes, sindices)
+	;result = plot_alpha_time(stimes, sindices)
 
 	;-----------------------------------;
 	;

@@ -205,7 +205,7 @@ pro psd_typeIIb_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	loadct, 0
         utplot, utimes, freq, yr=[f1,f0], /xs, /ys, xtitle=' ', ytitle='Frequency (MHz)', $
 		title='NenuFAR-ES11 '+time2file(utimes[0], /date), pos=posit, /normal, color=150, $
-		xr=[utimes[0], utimes[-1]], XTICKFORMAT="(A1)"
+		xr=[utimes[0], utimes[-1]]
 	
         ;------------------------------------------;
 	;	     Plot spectrogram
@@ -309,7 +309,7 @@ pro psd_typeIIb_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	;
     	;       Plot alpha time series
     	;
-	result = plot_alpha_time(stimes, sindices)
+;	result = plot_alpha_time(stimes, sindices)
 
 	;-----------------------------------;
 	;
