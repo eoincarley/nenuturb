@@ -76,7 +76,7 @@ end
 function plot_mean_psd, powers, pfreqs, pspecerr
 
 
-	setup_ps, './eps/nfar_typeIIc_mean_PSD_lin.eps', xsize=7, ysize=7
+	setup_ps, './eps/nfar_mean_PSD_lin_typeIIa.eps', xsize=7, ysize=7
 
 	mp = mean(powers, dim=2)
         mf = mean(pfreqs, dim=2)
@@ -143,7 +143,7 @@ function plot_all_psd, pfreqs, powers, times
 	loadct, 0	
 	;wset, 0
 	;window, 1, xs=400, ys=400
-	plot, [1, 2.5], [-5, -2], /nodata, /xs, /ys, ytitle='log!L10!N(PSD)', $
+	plot, [1, 2.5], [-6, -2], /nodata, /xs, /ys, ytitle='log!L10!N(PSD)', $
               xtitle='log!L10!N(k) Rs!U-1!N', pos = [0.12, 0.23, 0.48, 0.47], /noerase
 
 	loadct, 72
@@ -169,14 +169,15 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
         file = 'SUN_TRACKING_20190320_104936_0.spectra'
 
 	t0 = 33.0
-	t1 = 34.2
-	f0 = 21.0
-	f1 = 24.0
+        t1 = 34.5
+        f0 = 21.0
+        f1 = 24.0
+	
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/nfar_'+time2file(utimes[0])+'_PSD_lin.eps'
+		setup_ps, './eps/nfar_PSD_lin_typeIIa.eps'
 	endif else begin
 		!p.charsize=1.8
 		window, xs=800, ys=1200
@@ -283,7 +284,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 			oplot, [1.0, 2.5], [sigcutoff, sigcutoff], color=200
 		
 			;stop	
-			wait, 0.1	
+			;wait, 0.1	
 			endif
 
 			sindices[i] = result[1]

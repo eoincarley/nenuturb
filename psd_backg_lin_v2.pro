@@ -75,7 +75,7 @@ end
 function plot_mean_psd, powers, pfreqs, pspecerr, postscript=postscript
 
 	if keyword_set(postscript) then begin
-                setup_ps, './eps/nfar_bg_mean_PSD_lin.eps', xsize=7, ysize=7
+                setup_ps, './eps/nfar_mean_PSD_lin_backg.eps', xsize=7, ysize=7
         endif else begin
 		window, 1, xs=500, ys=500
 	endelse	
@@ -182,7 +182,7 @@ pro psd_backg_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, reb
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/nfar_'+time2file(utimes[0])+'_PSD_bg_lin.eps', xsize=10, ysize=14
+		setup_ps, './eps/nfar_PSD_lin_backg.eps', xsize=10, ysize=14
 	endif else begin
 		!p.charsize=1.8
 		window, xs=800, ys=1200

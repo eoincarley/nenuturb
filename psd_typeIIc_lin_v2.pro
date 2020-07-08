@@ -75,7 +75,7 @@ end
 function plot_mean_psd, powers, pfreqs, pspecerr
 
 
-	setup_ps, './eps/nfar_typeIIc_mean_PSD_lin.eps', xsize=7, ysize=7
+	setup_ps, './eps/nfar_mean_PSD_lin_typeIIc.eps', xsize=7, ysize=7
 
 	mp = mean(powers, dim=2)
         mf = mean(pfreqs, dim=2)
@@ -174,7 +174,7 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/nfar_'+time2file(utimes[0])+'_PSD_lin.eps', xsize=10, ysize=14
+		setup_ps, './eps/nfar_PSD_lin_typeIIc.eps', xsize=10, ysize=14
 	endif else begin
 		!p.charsize=1.8
 		window, xs=800, ys=1200
