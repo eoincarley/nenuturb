@@ -334,7 +334,7 @@ pro psd_typeIIb_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
     	;       Plot mean PSD
     	;
 	if keyword_set(postscript) then $
-		setup_ps, './eps/nfar_mean_PSD_lin_typeIIb.eps', xsize=7, ysize=7
+		setup_ps, './eps/nfar_mean_PSD_lin_typeIIb.eps', xsize=5, ysize=5
     	
 	result = plot_mean_psd(powers, pfreqs, pspecerr)
 
