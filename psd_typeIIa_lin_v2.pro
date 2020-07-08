@@ -8,7 +8,7 @@ pro setup_ps, name, xsize=xsize, ysize=ysize
           /helvetica, $
           /inches, $
           xsize=xsize, $
-          ysize=xsize, $
+          ysize=ysize, $
           /encapsulate, $
           yoffset=5, $
           bits_per_pixel = 16
@@ -76,7 +76,7 @@ end
 function plot_mean_psd, powers, pfreqs, pspecerr
 
 
-	setup_ps, './eps/nfar_mean_PSD_lin_typeIIa.eps', xsize=7, ysize=7
+	;setup_ps, './eps/nfar_mean_PSD_lin_typeIIa.eps', xsize=7, ysize=7
 
 	mp = mean(powers, dim=2)
         mf = mean(pfreqs, dim=2)
@@ -91,10 +91,10 @@ function plot_mean_psd, powers, pfreqs, pspecerr
               pos = [0.15, 0.15, 0.9, 0.9], /noerase, thick=5, XTICKINTERVAL=0.5
         oplot, pfsim, powsim, color=5, thick=8
 
-        powturb = p[0]-0.45 + (-5/3.)*pfsim
+        powturb = p[0]+0.05 + (-5/3.)*pfsim
         oplot, pfsim, powturb, linestyle=5, color=7, thick=8
 
-	powturb = p[0]+0.2 + (-7/3.)*pfsim
+	powturb = p[0]+0.7 + (-7/3.)*pfsim
         oplot, pfsim, powturb, linestyle=5, color=6, thick=8
 
 
@@ -110,8 +110,8 @@ function plot_mean_psd, powers, pfreqs, pspecerr
         powturb = p[0]-ierr + (p[1]-aerr)*(pfsim)
         oplot, pfsim, powturb, linestyle=1, color=50, thick=4
 
-        device, /close
-        set_plot, 'x'	
+        ;idevice, /close
+        ;set_plot, 'x'	
 	
 end
 
@@ -327,12 +327,23 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		device, /close
 		set_plot, 'x'
 	endif	
-	  
+	
+
+	window, 1, xs=700, ys=700	
  	;-----------------------------------;
     	;
     	;       Plot mean PSD
     	;
-    	result = plot_mean_psd(powers, pfreqs, pspecerr)
+    	if keyword_set(postscript) then $
+		 setup_ps, './eps/nfar_mean_PSD_lin_typeIIa.eps', xsize=7, ysize=7
+
+ 	result = plot_mean_psd(powers, pfreqs, pspecerr)
+
+
+	if keyword_set(postscript) then begin
+                device, /close
+                set_plot, 'x'
+        endif
 
 stop
-END
+END 
