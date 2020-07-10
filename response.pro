@@ -75,7 +75,7 @@ end
 function plot_mean_psd, powers, pfreqs, pspecerr
 
 
-	setup_ps, './eps/nfar_mean_PSD_lin_typeIIc.eps', xsize=7, ysize=7
+	;setup_ps, './eps/nfar_mean_PSD_lin_typeIIc.eps', xsize=7, ysize=7
 
 	mp = mean(powers, dim=2)
         mf = mean(pfreqs, dim=2)
@@ -109,8 +109,8 @@ function plot_mean_psd, powers, pfreqs, pspecerr
         powturb = p[0]-ierr + (p[1]-aerr)*(pfsim)
         oplot, pfsim, powturb, linestyle=1, color=50, thick=4
 
-        device, /close
-        set_plot, 'x'	
+        ;device, /close
+        ;set_plot, 'x'	
 	
 end
 
@@ -156,7 +156,7 @@ function plot_all_psd, pfreqs, powers, times
 END
 
 
-pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
+pro response, points=points
 
 	; PSD of first type II. Code working.
 
@@ -166,10 +166,10 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	path = '/databf2/nenufar-tf/ES11/2019/03/20190320_104900_20190320_125000_SUN_TRACKING_BHR/'
         file = 'SUN_TRACKING_20190320_104936_0.spectra'
 
-	t0 = 40.0
-	t1 = 43.5	
+	t0 = 118.15
+	t1 = 119.0	
 	f0 = 21.0
-	f1 = 33.0
+	f1 = 55.0
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 	   
 
@@ -177,13 +177,13 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		setup_ps, './eps/nfar_PSD_lin_typeIIc.eps', xsize=10, ysize=14
 	endif else begin
 		!p.charsize=1.8
-		window, xs=800, ys=1200
+		window, xs=400, ys=400
 	endelse	
 
-	;data = 10.0*alog10(data)
+	;data = alog10(data)
 	;data = constbacksub(data, /auto)
 	;data = smooth(data,3)
-	stop
+
 	if keyword_set(rebin) then begin	
 		nfbin = (size(data))[2]
 		data = data[0:39999, *]
@@ -198,11 +198,11 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	;------------------------------------------;
 	;	Empty template to get black ticks
 	;
-	posit=[0.12, 0.75, 0.95, 0.95]
+	posit=[0.12, 0.12, 0.95, 0.95]
 	loadct, 0
         utplot, utimes, freq, yr=[f1,f0], /xs, /ys, xtitle=' ', ytitle='Frequency (MHz)', $
 		title='NenuFAR-ES11 '+time2file(utimes[0], /date), pos=posit, /normal, color=150, $
-		xr=[utimes[0], utimes[-1]], XTICKFORMAT="(A1)"
+		xr=[utimes[0], utimes[-1]]
 	
         ;------------------------------------------;
 	;	     Plot spectrogram
@@ -212,126 +212,35 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	spectro_plot, sigrange(data), utimes, freq, /xs, /ys, $
 		ytitle=' ', xtitle=' ', yr=[f1, f0], /noerase, XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", $
 		position=posit, /normal, xr=[utimes[0], utimes[-1]]
-	;-----------------------------------------;
-	;	         Flatten	
-	;
-	;data = congrid(data, 1e4, 1984)
-	;utimes = congrid(utimes, 1e4)
 
-	;-----------------------------------------;
-	;	Each profile is evenly sampled
-	;	in f, but unevenly in space.
-	; 	This gets an even sample in space
-	;	by interpolation.	
-	npoints=((freq*1e6/1.)/8980.0)^2.0 	
-	rads = density_to_radius(npoints, model='newkirk')
-	even_rads = interpol([rads[0], rads[-1]], n_elements(freq))
-	nt=n_elements(data[*,0])-1
-	def = even_rads[2]-even_rads[1]
-	sindices = fltarr(nt+1)
-	stimes = dblarr(nt+1)
-	vsave=0
-	loadct, 0
-
-	if ~keyword_set(postscript) then $
-		window, 1, xs=600, ys=600	
+	window, 1, xs=400, ys=400
+	loadct, 0	
+	spectra = min(data[0:100, *], dim=1)
 	
-	pspecerr = 0.05
-	for i=0, nt, ntsteps do begin
-		prof = data[i, *]
-		even_prof = interpol(prof, rads, even_rads)
-		even_prof = even_prof/max(even_prof)
+ 	for i=0, n_elements(spectra)-1 do begin
+		if spectra[i] gt 1.5e6 then spectra[i]=spectra[i-30]
+	endfor	
 
-		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$ 
-			/tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)
+	;spectra[where(spectra gt 8e5)]=4e5
+	spectra = smooth(spectra, 100, /edge_mirror)
+	response = spectra/max(spectra)
+	plot, freq, response, /xs, /ys
+	save, response, freq, filename='nfar_response.sav'
 
-		
-		pfreq = alog10(pfreq)
-		power = alog10(power)
-		ind0 = closest(pfreq, 1.0)
-		ind1 = closest(pfreq, 2.5)
-		pfreq = pfreq[ind0:ind1]
-		power = power[ind0:ind1]
-		sigcutoff = alog10(signif[0])
-		;power = power[where(power gt sigcutoff)]
-		;pfreq = pfreq[where(power gt sigcutoff)]
-		
-		;wset, 1
-		;plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(Power Rs!U-1!N)', $
-		;xtitle='log!L10!N(k Rs!U-1!N)';, yr=[1e8, 1e12]
 
-		result = fit_psd(pfreq, power, pspecerr=pspecerr)
-		pvalue = result[4]
-		
-		;print, ' ' 
-                ;print, 'Reduced chi square value: ' + string(chisq)
-                ;print, 'Prob random variables has better chi: '+ string(pvalue)+'%'
-                ;print, '---'    
-	
-		pfsim = interpol([pfreq[0], pfreq[-1]], 100)
-		powsim = result[0] + result[1]*pfsim
-
-		if pvalue gt 5.0 then begin	
-			
-			if keyword_set(plot_ipsd) then begin
-			plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
-				xtitle='log!L10!N(k Rs!U-1!N)', $
-                        	title=anytim(utimes[i], /cc)+'  S:'+string(result[1], format='(f5.2)'), $
-				yr=[-6, -2];, /noerase, color=colors[i], psym=1
-                	
-			xerr = dblarr(n_elements(pfreq))
-			yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
-			oploterror, pfreq, power, xerr, yerr
-			oplot, pfsim, powsim, color=10
-			oplot, [1.0, 2.5], [sigcutoff, sigcutoff], color=200
-			;wait, 0.001	
-			
-			xyouts, 0.6, 0.8, pvalue, /normal
-			endif
-			
-			sindices[i] = result[1]
-			stimes[i] = utimes[i]
-			if vsave eq 0 then begin
-				powers = [power]
-				pfreqs = [pfreq]
-				vsave = 1
-			endif else begin
-				powers = [ [powers], [[power]] ]
-				pfreqs = [ [pfreqs], [[pfreq]] ]
-			endelse	
-		endif 	
-	endfor
-
-	if ~keyword_set(postscript) then wset, 0
-	sindices = sindices[where(sindices ne 0)]	
-	stimes = stimes[where(stimes ne 0)]
-	;-----------------------------------;
+	;-----------------------------------------;
 	;
-        ;       Plot alpha time series
-        ;
-	result = plot_alpha_time(stimes, sindices)
-
-	;-----------------------------------;
+	;	    Get particle speed	
 	;
-	;   	Plot hist of spectral indices
-	;
-	result = plot_alpha_hist(sindices)
-
-	;----------------------------------;
-	;
-	;	Plot all psd
-	;
-	result = plot_all_psd(pfreqs, powers, stimes)
-
-	if keyword_set(postscript) then begin
-		device, /close
-		set_plot, 'x'
-	endif	
-	  
- 	;-----------------------------------;
-        ;
-        ;       Plot mean PSD
-        ;
-        result = plot_mean_psd(powers, pfreqs, pspecerr)
+	if keyword_set(points) then begin
+		point, tpoints, fpoints
+		npoints=((fpoints*1e6/2.)/8980.0)^2.0 	
+		rads = density_to_radius(npoints, model='newkirk')
+		radsm = rads*6.95e8
+		tsec = tpoints - tpoints[0]
+		result = linfit(tsec, radsm)
+		speed = abs(result[1])/2.98e8
+		erel = rel_energy(speed)	
+	endif
 stop
 END
