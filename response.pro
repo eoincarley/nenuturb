@@ -225,7 +225,8 @@ pro response, points=points
 	spectra = smooth(spectra, 100, /edge_mirror)
 	response = spectra/max(spectra)
 	plot, freq, response, /xs, /ys
-	save, response, freq, filename='nfar_response.sav'
+	rfreq=freq
+	save, response, rfreq, filename='nfar_response.sav'
 
 
 	;-----------------------------------------;

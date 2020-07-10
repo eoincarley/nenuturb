@@ -75,7 +75,7 @@ end
 function plot_mean_psd, powers, pfreqs, pspecerr
 
 
-	setup_ps, './eps/nfar_mean_PSD_lin_typeIIc.eps', xsize=7, ysize=7
+	;setup_ps, './eps/nfar_mean_PSD_lin_typeIIc.eps', xsize=7, ysize=7
 
 	mp = mean(powers, dim=2)
         mf = mean(pfreqs, dim=2)
@@ -109,8 +109,8 @@ function plot_mean_psd, powers, pfreqs, pspecerr
         powturb = p[0]-ierr + (p[1]-aerr)*(pfsim)
         oplot, pfsim, powturb, linestyle=1, color=50, thick=4
 
-        device, /close
-        set_plot, 'x'	
+       	;device, /close
+        ;set_plot, 'x'	
 	
 end
 
@@ -140,7 +140,7 @@ function plot_all_psd, pfreqs, powers, times
 	loadct, 0	
 	;wset, 0
 	;window, 1, xs=400, ys=400
-	plot, [1, 2.5], [-6, -2], /nodata, /xs, /ys, ytitle='log!L10!N(PSD)', $
+	plot, [1, 2.5], [-8, -1], /nodata, /xs, /ys, ytitle='log!L10!N(PSD)', $
               xtitle='log!L10!N(k) Rs!U-1!N', pos = [0.12, 0.18, 0.48, 0.42], /noerase
 
 	loadct, 72
@@ -152,6 +152,21 @@ function plot_all_psd, pfreqs, powers, times
 	trange = (times - times[0])/60.0
 	cgCOLORBAR, range=[trange[0], trange[-1]],  POSITION=[0.12, 0.43, 0.48, 0.45], $
 		title='Mins after '+anytim(times[0], /cc, /trun), /top, charsize=1.0
+
+END
+
+function apply_response, data, freq
+
+	restore, 'nfar_response.sav'
+	ind0 = where(rfreq eq freq[0])
+	ind1 = where(rfreq eq freq[-1])
+	response = response[ind0:ind1]
+	
+	for i=0, n_elements(data[*, 0])-1 do begin
+		data[i, *] = data[i, *]/response
+	endfor	
+	
+	return, data
 
 END
 
@@ -183,7 +198,7 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	;data = 10.0*alog10(data)
 	;data = constbacksub(data, /auto)
 	;data = smooth(data,3)
-	stop
+	
 	if keyword_set(rebin) then begin	
 		nfbin = (size(data))[2]
 		data = data[0:39999, *]
@@ -194,7 +209,10 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	endif else begin
 		ntsteps=10
 	endelse	
-		;stop
+	
+	data = apply_response(data, freq)
+
+	;stop
 	;------------------------------------------;
 	;	Empty template to get black ticks
 	;
@@ -271,7 +289,7 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		pfsim = interpol([pfreq[0], pfreq[-1]], 100)
 		powsim = result[0] + result[1]*pfsim
 
-		if pvalue gt 5.0 then begin	
+		if pvalue gt 0.0 then begin	
 			
 			if keyword_set(plot_ipsd) then begin
 			plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
@@ -327,7 +345,9 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		device, /close
 		set_plot, 'x'
 	endif	
-	  
+
+	loadct, 0
+	window, 1, xs=400, ys=400  
  	;-----------------------------------;
         ;
         ;       Plot mean PSD
