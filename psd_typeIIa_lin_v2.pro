@@ -159,6 +159,21 @@ function plot_all_psd, pfreqs, powers, times
 
 END
 
+function apply_response, data, freq
+
+        restore, 'nfar_response.sav'
+        ind0 = where(rfreq eq freq[0])
+        ind1 = where(rfreq eq freq[-1])
+        response = response[ind0:ind1]
+
+        for i=0, n_elements(data[*, 0])-1 do begin
+                data[i, *] = data[i, *]/response
+        endfor
+
+        return, data
+
+END
+
 pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
 
 	; PSD of first type II. Code working.
@@ -171,7 +186,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 
 	t0 = 33.0
         t1 = 34.5
-        f0 = 21.0
+        f0 = 21.5
         f1 = 24.0
 	
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
@@ -198,7 +213,10 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	endif else begin
 		ntsteps=10
 	endelse	
-		;stop
+	
+	data = apply_response(data, freq)
+
+	;stop
 	;------------------------------------------;
 	;	Empty template to get black ticks
 	;
@@ -240,7 +258,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	if ~keyword_set(postscript) then $
 		window, 1, xs=600, ys=600	
 
-	pspecerr = 0.05
+	pspecerr = 0.10 ; Error on the power in PSD. Same as error on flux (?). No measure of this. Conservative estimate of 5-10%
 	for i=0, nt, ntsteps do begin
 		prof = data[i, *]
 		even_prof = interpol(prof, rads, even_rads)
@@ -269,7 +287,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		pfsim = interpol([pfreq[0], pfreq[-1]], 100)
 		powsim = result[0] + result[1]*pfsim
 
-		if pvalue gt 5.0 then begin	
+		if pvalue ge 5.0 then begin	
 
 			if keyword_set(plot_ipsd) then begin	
 			plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
@@ -284,8 +302,8 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 			xyouts, 0.6, 0.8, pvalue, /normal
 			oplot, [1.0, 2.5], [sigcutoff, sigcutoff], color=200
 		
-			;stop	
-			;wait, 0.1	
+			if pvalue lt 0.0 then stop	
+			;wait, 0.001	
 			endif
 
 			sindices[i] = result[1]
@@ -310,7 +328,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	;
     	;       Plot alpha time series
     	;
-	;result = plot_alpha_time(stimes, sindices)
+	result = plot_alpha_time(stimes, sindices)
 
 	;-----------------------------------;
 	;
