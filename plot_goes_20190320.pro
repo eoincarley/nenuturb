@@ -42,9 +42,9 @@ pro plot_goes_20190320, t1, t2, position=position, download=download, tlines=tli
 	plots, times, 1e-7, linestyle=2
 	plots, times, 1e-6, linestyle=2
 
-	outplot, anytim([tlines[0], tlines[0]], /cc), yrange, linestyle=0, thick=3
-        outplot, anytim([tlines[1], tlines[1]], /cc), yrange, linestyle=5, thick=5
-	outplot, anytim([tlines[2], tlines[2]], /cc), yrange, linestyle=0, thick=3		
+	outplot, anytim([tlines[0], tlines[0]], /cc), yrange, linestyle=5, thick=3
+        outplot, anytim([tlines[1], tlines[1]], /cc), yrange, linestyle=5, thick=3
+	;outplot, anytim([tlines[2], tlines[2]], /cc), yrange, linestyle=0, thick=3		
 
 	legend, ['GOES15 0.1-0.8nm','GOES15 0.05-0.4nm'], $
 			linestyle=[0,0], $
