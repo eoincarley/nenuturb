@@ -48,7 +48,7 @@ pro plot_goes_nenufar_v2, save=save, postscript=postscript
 
 
 	if keyword_set(postscript) then begin
-                setup_ps, './nfar_goes_20190320.eps'
+                setup_ps, './eps/nfar_goes_20190320.eps'
         endif else begin
                 window, xs=1200, ys=700
         endelse 
