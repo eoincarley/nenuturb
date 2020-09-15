@@ -16,8 +16,19 @@ pro setup_ps, name, xsize=xsize, ysize=ysize
 end
 
 pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
+
+; /fflat or fflat=1 = division of the output dynamic spectrum by the Stokes I average spectrum
+;           fflat=2 = division of the output dynamic spectrum by the Stokes I median spectrum
+;           fflat=3 = division of the output dynamic spectrum by the Stokes I empirical bandpass correction     => normalisation spectrum stored in corrf
+; /tflat or tflat=1 = division of the output dynamic spectrum by the Stokes I average time profile
+;           tflat=2 = division of the output dynamic spectrum by the Stokes I median time profile
+;           tflat=3 = division of the output dynamic spectrum by the Stokes I 6-min profile computed at output timescale => gain variation stored in corrt
+;           tflat=4 = same as tflat=3 + blanking of 3 spectra around 6-min gain jumps
+;           tflat=5 = on-the-fly division of the dynamic spectrum by the Stokes I 6-min profile computed in a first reading of the data and stored in corrt (with abscissa in t
+
+
    	READ_NU_SPEC, file, data,time,freq,beam,ndata,nt,dt,nf,df,ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=1
         utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
         freq = reverse(freq)
@@ -86,7 +97,7 @@ function plot_mean_psd, powers, pfreqs, pspecerr
         pfsim = interpol([mf[0], mf[-1]], 100)
         powsim = p[0] + p[1]*pfsim
         set_line_color
-        plot, mf, mp, /xs, /ys, ytitle='log!L10!N(PSD)', xtitle='log!L10!N(k) R!U-1!N', $
+	plot, mf, mp, /xs, /ys, ytitle='log!L10!N(PSD)', xtitle='log!L10!N(k) R!U-1!N', $
               pos = [0.15, 0.15, 0.9, 0.9], /noerase, thick=5, XTICKINTERVAL=0.5
         oplot, pfsim, powsim, color=5, thick=8
 
@@ -210,7 +221,7 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		ntsteps=10
 	endelse	
 	
-	data = apply_response(data, freq)
+	;data = apply_response(data, freq)
 
 	;stop
 	;------------------------------------------;
@@ -289,7 +300,7 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		pfsim = interpol([pfreq[0], pfreq[-1]], 100)
 		powsim = result[0] + result[1]*pfsim
 
-		if pvalue gt 0.0 then begin	
+		if pvalue gt 1.0 then begin	
 			
 			if keyword_set(plot_ipsd) then begin
 			plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
