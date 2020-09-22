@@ -28,7 +28,7 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 
 
    	READ_NU_SPEC, file, data,time,freq,beam,ndata,nt,dt,nf,df,ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=1
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3;, fclean=6
         utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
         freq = reverse(freq)
@@ -67,7 +67,7 @@ function fit_psd, frequency, power, pspecerr=pspecerr
 	; If I give an errors (without the weights) then not everything is accepted. Some
 	; fits are rejected. However, the choice of err here is slightly arbitrary.
 
-        p = mpfitexpr(fit, frequency, power, err, weights=1/err^2, start, perror = perror, $
+        p = mpfitexpr(fit, frequency, power, err, weights=1/power^2, start, perror = perror, $
 		yfit=yfit, bestnorm=bestnorm, dof=dof, /quiet)
         perror = perror * SQRT(BESTNORM / DOF)
         aerr = perror[1]*2.0 ; 2-sigma uncertainty on the slope
@@ -83,7 +83,7 @@ function fit_psd, frequency, power, pspecerr=pspecerr
 
 end
 
-function plot_mean_psd, powers, pfreqs, pspecerr
+function plot_mean_psd, powers, pfreqs, pspecerr, sigcuts
 
 
 	;setup_ps, './eps/nfar_mean_PSD_lin_typeIIc.eps', xsize=7, ysize=7
@@ -97,16 +97,30 @@ function plot_mean_psd, powers, pfreqs, pspecerr
         pfsim = interpol([mf[0], mf[-1]], 100)
         powsim = p[0] + p[1]*pfsim
         set_line_color
-	plot, mf, mp, /xs, /ys, ytitle='log!L10!N(PSD)', xtitle='log!L10!N(k) R!U-1!N', $
-              pos = [0.15, 0.15, 0.9, 0.9], /noerase, thick=5, XTICKINTERVAL=0.5
-        oplot, pfsim, powsim, color=5, thick=8
+
+	;--------------------------;
+	;  Plot with /ylog
+	mf = 10^mf
+	mp = 10^mp
+	powsim = 10^powsim
+
+	plot, mf, mp, /xs, /ys, ytitle='PSD', $
+              pos = [0.15, 0.15, 0.9, 0.9], /noerase, thick=5, XTICKINTERVAL=0.5, /ylog, /xlog, $
+      	      xr=[10.0, 10.0^2.5], XTICKFORMAT="(A1)", xticklen=1e-10
+
+      	axis, xaxis=0, xr = [10.0, 10.0^2.5], /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'	
+	axis, xaxis=1, xr = [10.0/696.34, 10^2.5/696.34], /xlog, /xs, xtitle='(Mm!U-1!N)'
+      
+        oplot, 10^pfsim, powsim, color=5, thick=8
 
         powturb = p[0]-0.45 + (-5/3.)*pfsim
-        oplot, pfsim, powturb, linestyle=5, color=7, thick=8
+        oplot, 10^pfsim, 10^powturb, linestyle=5, color=7, thick=8
 
 	powturb = p[0]+0.2 + (-7/3.)*pfsim
-        oplot, pfsim, powturb, linestyle=5, color=6, thick=8
+        oplot, 10^pfsim, 10^powturb, linestyle=5, color=6, thick=8
 
+	meansig = 10^mean(sigcuts)
+	oplot, 10^[pfsim[0], pfsim[-1]], [meansig, meansig], linestyle=5, color=1
 
 	alpha = cgsymbol('alpha')
         aerrstr = string(round(aerr*100.0)/100., format='(f4.2)')
@@ -116,11 +130,14 @@ function plot_mean_psd, powers, pfreqs, pspecerr
 
         loadct, 0
         powturb = p[0]+ierr + (p[1]+aerr)*(pfsim)
-        oplot, pfsim, powturb, linestyle=1, color=50, thick=4
+        oplot, 10^pfsim, 10^powturb, linestyle=1, color=50, thick=4
         powturb = p[0]-ierr + (p[1]-aerr)*(pfsim)
-        oplot, pfsim, powturb, linestyle=1, color=50, thick=4
+        oplot, 10^pfsim, 10^powturb, linestyle=1, color=50, thick=4
 
-       	;device, /close
+       	
+	
+	;axis, xaxis=1, xtickv = [10.0/696.34, 100.0/696.34], /xs
+	;device, /close
         ;set_plot, 'x'	
 	
 end
@@ -282,6 +299,7 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		pfreq = pfreq[ind0:ind1]
 		power = power[ind0:ind1]
 		sigcutoff = alog10(signif[0])
+		;stop
 		;power = power[where(power gt sigcutoff)]
 		;pfreq = pfreq[where(power gt sigcutoff)]
 		
@@ -323,10 +341,12 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 			if vsave eq 0 then begin
 				powers = [power]
 				pfreqs = [pfreq]
+				sigcuts = sigcutoff
 				vsave = 1
 			endif else begin
 				powers = [ [powers], [[power]] ]
 				pfreqs = [ [pfreqs], [[pfreq]] ]
+				sigcuts = [sigcuts, sigcutoff]
 			endelse	
 		endif 	
 	endfor
@@ -363,6 +383,6 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
         ;
         ;       Plot mean PSD
         ;
-        result = plot_mean_psd(powers, pfreqs, pspecerr)
+        result = plot_mean_psd(powers, pfreqs, pspecerr, sigcuts)
 stop
 END
