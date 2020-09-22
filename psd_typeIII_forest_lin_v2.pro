@@ -29,11 +29,10 @@ function plot_alpha_time, utimes, sindices
         sturb0 = -5/3.
         sturb1 = -7/3.
         alpha = cgsymbol('alpha')
-
         utplot, utimes, sindices, pos=[0.12, 0.54, 0.95, 0.74], $
                 /noerase, /xs, /ys, yr=[-3, -1.0], $
                 psym=1, symsize=0.8, color=5, xr=[utimes[0], utimes[-1]], $
-                xtitle='Time (UT)', ytitle='PSD spectral index ('+alpha+')', xticks=7
+                xtitle='Time (UT)', ytitle='PSD spectral index ('+alpha+')'
 
         outplot, [utimes[0], utimes[-1]], [sturb0, sturb0], linestyle=5, thick=4, color=7
         outplot, [utimes[0], utimes[-1]], [sturb1, sturb1], linestyle=0, thick=4, color=6
@@ -73,11 +72,14 @@ function fit_psd, frequency, power, pspecerr=pspecerr
 
 end
 
+function plot_mean_psd, powers, pfreqs, pspecerr, postscript=postscript
 
-function plot_mean_psd, powers, pfreqs, pspecerr
-
-
-	;setup_ps, './eps/nfar_mean_PSD_lin_typeIIa.eps', xsize=7, ysize=7
+	if keyword_set(postscript) then begin
+                setup_ps, './eps/nfar_mean_PSD_lin_backg.eps', xsize=7, ysize=7
+        endif else begin
+		window, 1, xs=500, ys=500
+	endelse	
+	
 
 	mp = mean(powers, dim=2)
         mf = mean(pfreqs, dim=2)
@@ -92,10 +94,10 @@ function plot_mean_psd, powers, pfreqs, pspecerr
               pos = [0.15, 0.15, 0.9, 0.9], /noerase, thick=5, XTICKINTERVAL=0.5
         oplot, pfsim, powsim, color=5, thick=8
 
-        powturb = p[0]+0.05 + (-5/3.)*pfsim
+        powturb = p[0]-0.05 + (-5/3.)*pfsim
         oplot, pfsim, powturb, linestyle=5, color=7, thick=8
 
-	powturb = p[0]+0.7 + (-7/3.)*pfsim
+	powturb = p[0]+0.6 + (-7/3.)*pfsim
         oplot, pfsim, powturb, linestyle=5, color=6, thick=8
 
 
@@ -111,8 +113,10 @@ function plot_mean_psd, powers, pfreqs, pspecerr
         powturb = p[0]-ierr + (p[1]-aerr)*(pfsim)
         oplot, pfsim, powturb, linestyle=1, color=50, thick=4
 
-        ;idevice, /close
-        ;set_plot, 'x'	
+	if keyword_set(postscript) then begin
+                device, /close
+                set_plot, 'x'
+        endif
 	
 end
 
@@ -122,8 +126,8 @@ function plot_alpha_hist, sindices
 	set_line_color
         plothist, sindices, bin=0.025, $
                 xtitle='PSD spectral index '+alpha, ytitle='Count', $
-                pos = [0.59, 0.18, 0.95, 0.42], /noerase, color=0, yr=[0, 50], thick=4
-	       
+                pos = [0.59, 0.18, 0.95, 0.42], /noerase, color=0, yr=[0, 150], thick=4
+       
        
 	meanalpha = string(round(median(sindices)*100.)/100.0, format='(f5.2)')
         oplot, [meanalpha, meanalpha], [0, 600.0], color=5, thick=5
@@ -132,7 +136,7 @@ function plot_alpha_hist, sindices
 
         legend,[cgsymbol('mu')+'!L'+alpha+'!N: '+meanalpha, alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[0, 5, 5], color=[5, 7, 6], $
                 box=0, /top, /left, charsize=1.4, thick=[5,4,4]
-
+ 	
 end
 
 function plot_all_psd, pfreqs, powers, times
@@ -159,22 +163,8 @@ function plot_all_psd, pfreqs, powers, times
 
 END
 
-function apply_response, data, freq
 
-        restore, 'nfar_response.sav'
-        ind0 = where(rfreq eq freq[0])
-        ind1 = where(rfreq eq freq[-1])
-        response = response[ind0:ind1]
-
-        for i=0, n_elements(data[*, 0])-1 do begin
-                data[i, *] = data[i, *]/response
-        endfor
-
-        return, data
-
-END
-
-pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
+pro psd_typeIII_forest_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
 
 	; PSD of first type II. Code working.
 
@@ -184,16 +174,15 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	path = '/databf2/nenufar-tf/ES11/2019/03/20190320_104900_20190320_125000_SUN_TRACKING_BHR/'
         file = 'SUN_TRACKING_20190320_104936_0.spectra'
 
-	t0 = 33.0
-        t1 = 34.5
-        f0 = 21.5
-        f1 = 24.0
-	
+	t0 = 40.0
+	t1 = 43.5	
+	f0 = 33.0
+	f1 = 55.0
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/nfar_PSD_lin_typeIIa.eps', xsize=10, ysize=14
+		setup_ps, './eps/nfar_PSD_lin_backg.eps', xsize=10, ysize=14
 	endif else begin
 		!p.charsize=1.8
 		window, xs=800, ys=1200
@@ -205,18 +194,15 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 
 	if keyword_set(rebin) then begin	
 		nfbin = (size(data))[2]
-		data = data[0:11999, *]
-		tbin = 3000
+		data = data[0:39999, *]
+		tbin = 10000
 		data = rebin(data, tbin, nfbin)
 		utimes = congrid(utimes, tbin)
 		ntsteps=1
 	endif else begin
 		ntsteps=10
 	endelse	
-	
-;	data = apply_response(data, freq)
-
-	;stop
+		;stop
 	;------------------------------------------;
 	;	Empty template to get black ticks
 	;
@@ -224,7 +210,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	loadct, 0
         utplot, utimes, freq, yr=[f1,f0], /xs, /ys, xtitle=' ', ytitle='Frequency (MHz)', $
 		title='NenuFAR-ES11 '+time2file(utimes[0], /date), pos=posit, /normal, color=150, $
-		xr=[utimes[0], utimes[-1]]
+		xr=[utimes[0], utimes[-1]], XTICKFORMAT="(A1)"
 	
         ;------------------------------------------;
 	;	     Plot spectrogram
@@ -254,57 +240,49 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	stimes = dblarr(nt+1)
 	vsave=0
 	loadct, 0
-
 	if ~keyword_set(postscript) then $
 		window, 1, xs=600, ys=600	
-
-	pspecerr = 0.10 ; Error on the power in PSD. Same as error on flux (?). No measure of this. Conservative estimate of 5-10%
+	
+	pspecerr = 0.05
 	for i=0, nt, ntsteps do begin
 		prof = data[i, *]
 		even_prof = interpol(prof, rads, even_rads)
 		even_prof = even_prof/max(even_prof)
 
-		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq, $
-			/tukey, width=0.002, sig_level=0.05, SIGNIFICANCE=signif)
+		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$ 
+			/tukey, width=0.001, sig_level=0.05, SIGNIFICANCE=signif)
 
 		
 		pfreq = alog10(pfreq)
 		power = alog10(power)
 		ind0 = closest(pfreq, 1.0)
-		ind1 = closest(pfreq, 2.5)
+		ind1 = closest(pfreq, 2.3)
 		pfreq = pfreq[ind0:ind1]
 		power = power[ind0:ind1]
 		sigcutoff = alog10(signif[0])
 
 		result = fit_psd(pfreq, power, pspecerr=pspecerr)
 		pvalue = result[4]
-		
-		;print, ' ' 
-                ;print, 'Reduced chi square value: ' + string(chisq)
-                ;print, 'Prob random variables has better chi: '+ string(pvalue)+'%'
-                ;print, '---'    
 	
 		pfsim = interpol([pfreq[0], pfreq[-1]], 100)
 		powsim = result[0] + result[1]*pfsim
 
-		if pvalue ge 1.0 then begin	
-
+		if pvalue gt 1.0 and max(power) gt -3.5 then begin	
+		
 			if keyword_set(plot_ipsd) then begin	
 			plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
 				xtitle='log!L10!N(k Rs!U-1!N)', $
-                        ;	title=anytim(utimes[i], /cc)+'  S:'+string(result[1], format='(f5.2)'), $
-				yr=[-6, -1];, /noerase, color=colors[i], psym=1
+                        	title=anytim(utimes[i], /cc)+'  S:'+string(result[1], format='(f5.2)'), $
+				yr=[-6, -2];, /noerase, color=colors[i], psym=1
                 	
 			xerr = dblarr(n_elements(pfreq))
 			yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
 			oploterror, pfreq, power, xerr, yerr
-			oplot, pfsim, powsim, color=100
+			oplot, pfsim, powsim, color=100, thick=2
 			xyouts, 0.6, 0.8, pvalue, /normal
 			oplot, [1.0, 2.5], [sigcutoff, sigcutoff], color=200
-		
-			if pvalue lt 0.0 then stop	
-			;wait, 0.001	
 			endif
+			;wait, 0.01
 
 			sindices[i] = result[1]
 			stimes[i] = utimes[i]
@@ -318,16 +296,15 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 			endelse	
 		endif 	
 	endfor
-	
+
 	if ~keyword_set(postscript) then wset, 0
-	
+
 	sindices = sindices[where(sindices ne 0)]	
 	stimes = stimes[where(stimes ne 0)]
-	
 	;-----------------------------------;
 	;
-    	;       Plot alpha time series
-    	;
+        ;       Plot alpha time series
+        ;
 	result = plot_alpha_time(stimes, sindices)
 
 	;-----------------------------------;
@@ -346,23 +323,11 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		device, /close
 		set_plot, 'x'
 	endif	
-	
-
-	window, 1, xs=700, ys=700	
- 	;-----------------------------------;
-    	;
-    	;       Plot mean PSD
-    	;
-    	if keyword_set(postscript) then $
-		 setup_ps, './eps/nfar_mean_PSD_lin_typeIIa.eps', xsize=5, ysize=5
-
- 	result = plot_mean_psd(powers, pfreqs, pspecerr)
-
-
-	if keyword_set(postscript) then begin
-                device, /close
-                set_plot, 'x'
-        endif
-
+ 	
+	;-----------------------------------;
+        ;
+        ;       Plot mean PSD
+        ;
+        result = plot_mean_psd(powers, pfreqs, pspecerr)
 stop
-END 
+END

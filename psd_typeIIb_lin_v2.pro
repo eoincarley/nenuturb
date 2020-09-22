@@ -17,7 +17,7 @@ end
 
 pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
    	READ_NU_SPEC, file, data,time,freq,beam,ndata,nt,dt,nf,df,ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=1
         utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
         freq = reverse(freq)
