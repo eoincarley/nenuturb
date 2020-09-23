@@ -17,7 +17,7 @@ end
 
 pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
    	READ_NU_SPEC, file, data,time,freq,beam,ndata,nt,dt,nf,df,ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=1
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3
         utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
         freq = reverse(freq)
@@ -74,47 +74,6 @@ function fit_psd, frequency, power, pspecerr=pspecerr
 end
 
 
-function plot_mean_psd, powers, pfreqs, pspecerr
-
-
-	;setup_ps, './eps/nfar_mean_PSD_lin_typeIIa.eps', xsize=7, ysize=7
-
-	mp = mean(powers, dim=2)
-        mf = mean(pfreqs, dim=2)
-	p = fit_psd(mf, mp, pspecerr=pspecerr)
-	aerr = p[2]
-	ierr = p[3]
-
-        pfsim = interpol([mf[0], mf[-1]], 100)
-        powsim = p[0] + p[1]*pfsim
-        set_line_color
-        plot, mf, mp, /xs, /ys, ytitle='log!L10!N(PSD)', xtitle='log!L10!N(k) R!U-1!N', $
-              pos = [0.15, 0.15, 0.9, 0.9], /noerase, thick=5, XTICKINTERVAL=0.5
-        oplot, pfsim, powsim, color=5, thick=8
-
-        powturb = p[0]+0.05 + (-5/3.)*pfsim
-        oplot, pfsim, powturb, linestyle=5, color=7, thick=8
-
-	powturb = p[0]+0.7 + (-7/3.)*pfsim
-        oplot, pfsim, powturb, linestyle=5, color=6, thick=8
-
-
-	alpha = cgsymbol('alpha')
-        aerrstr = string(round(aerr*100.0)/100., format='(f4.2)')
-        sindfit = string(round(p[1]*100.0)/100., format='(f6.2)')
-        legend,[alpha+':'+sindfit+'+/-'+aerrstr, alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[0,5,5], color=[5, 7, 6], $
-                box=0, /top, /right, charsize=1.6, thick=[4,4,4]
-
-        loadct, 0
-        powturb = p[0]+ierr + (p[1]+aerr)*(pfsim)
-        oplot, pfsim, powturb, linestyle=1, color=50, thick=4
-        powturb = p[0]-ierr + (p[1]-aerr)*(pfsim)
-        oplot, pfsim, powturb, linestyle=1, color=50, thick=4
-
-        ;idevice, /close
-        ;set_plot, 'x'	
-	
-end
 
 function plot_alpha_hist, sindices
 
@@ -142,15 +101,15 @@ function plot_all_psd, pfreqs, powers, times
 	colors = interpol([0,255], ntimes)
 	
 	loadct, 0	
-	;wset, 0
-	;window, 1, xs=400, ys=400
-	plot, [1, 2.5], [-6, -2], /nodata, /xs, /ys, ytitle='log!L10!N(PSD)', $
-              xtitle='log!L10!N(k) Rs!U-1!N', pos = [0.12, 0.18, 0.48, 0.42], /noerase
+	plot, 10^[1, 2.5], 10^[-6, -2], yr=[1e-6, 1e-2], /xlog, /ylog, /nodata, /xs, /ys, ytitle='PSD', $
+              xtitle='Wavenumber Rs!U-1!N', pos = [0.12, 0.18, 0.48, 0.42], /noerase
 
 	loadct, 72
 	reverse_ct	
+	pfq = 10^pfreqs
+        pow = 10^powers
 	for i=ntimes-1, 0, -1 do begin
-		oplot, pfreqs[*, i], powers[*, i], psym=1, color=colors[i], symsize=0.3
+		oplot, pfq[*, i], pow[*, i], psym=1, color=colors[i], symsize=0.3
 	endfor
 	
 	trange = (times - times[0])/60.0
@@ -265,7 +224,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		even_prof = even_prof/max(even_prof)
 
 		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq, $
-			/tukey, width=0.002, sig_level=0.05, SIGNIFICANCE=signif)
+			/tukey, width=0.002, sig_level=0.01, SIGNIFICANCE=signif)
 
 		
 		pfreq = alog10(pfreq)
@@ -311,10 +270,12 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 			if vsave eq 0 then begin
 				powers = [power]
 				pfreqs = [pfreq]
+				sigcuts = sigcutoff
 				vsave = 1
 			endif else begin
 				powers = [ [powers], [[power]] ]
 				pfreqs = [ [pfreqs], [[pfreq]] ]
+				sigcuts = [sigcuts, sigcutoff]
 			endelse	
 		endif 	
 	endfor
@@ -347,17 +308,16 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		set_plot, 'x'
 	endif	
 	
-
+	loadct, 0
 	window, 1, xs=700, ys=700	
- 	;-----------------------------------;
+	;-----------------------------------;
     	;
     	;       Plot mean PSD
     	;
     	if keyword_set(postscript) then $
 		 setup_ps, './eps/nfar_mean_PSD_lin_typeIIa.eps', xsize=5, ysize=5
 
- 	result = plot_mean_psd(powers, pfreqs, pspecerr)
-
+ 	result = plot_mean_psd(powers, pfreqs, pspecerr, sigcuts)
 
 	if keyword_set(postscript) then begin
                 device, /close

@@ -28,7 +28,7 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 
 
    	READ_NU_SPEC, file, data,time,freq,beam,ndata,nt,dt,nf,df,ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=1
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3
         utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
         freq = reverse(freq)
@@ -83,47 +83,6 @@ function fit_psd, frequency, power, pspecerr=pspecerr
 
 end
 
-function plot_mean_psd, powers, pfreqs, pspecerr
-
-
-	;setup_ps, './eps/nfar_mean_PSD_lin_typeIIc.eps', xsize=7, ysize=7
-
-	mp = mean(powers, dim=2)
-        mf = mean(pfreqs, dim=2)
-	p = fit_psd(mf, mp, pspecerr=pspecerr)
-	aerr = p[2]
-	ierr = p[3]
-
-        pfsim = interpol([mf[0], mf[-1]], 100)
-        powsim = p[0] + p[1]*pfsim
-        set_line_color
-	plot, mf, mp, /xs, /ys, ytitle='log!L10!N(PSD)', xtitle='log!L10!N(k) R!U-1!N', $
-              pos = [0.15, 0.15, 0.9, 0.9], /noerase, thick=5, XTICKINTERVAL=0.5
-        oplot, pfsim, powsim, color=5, thick=8
-
-        powturb = p[0]-0.45 + (-5/3.)*pfsim
-        oplot, pfsim, powturb, linestyle=5, color=7, thick=8
-
-	powturb = p[0]+0.2 + (-7/3.)*pfsim
-        oplot, pfsim, powturb, linestyle=5, color=6, thick=8
-
-
-	alpha = cgsymbol('alpha')
-        aerrstr = string(round(aerr*100.0)/100., format='(f4.2)')
-        sindfit = string(round(p[1]*100.0)/100., format='(f6.2)')
-        legend,[alpha+':'+sindfit+'+/-'+aerrstr, alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[0,5,5], color=[5, 7, 6], $
-                box=0, /top, /right, charsize=1.6, thick=[4,4,4]
-
-        loadct, 0
-        powturb = p[0]+ierr + (p[1]+aerr)*(pfsim)
-        oplot, pfsim, powturb, linestyle=1, color=50, thick=4
-        powturb = p[0]-ierr + (p[1]-aerr)*(pfsim)
-        oplot, pfsim, powturb, linestyle=1, color=50, thick=4
-
-       	;device, /close
-        ;set_plot, 'x'	
-	
-end
 
 function plot_alpha_hist, sindices
 
@@ -142,29 +101,6 @@ function plot_alpha_hist, sindices
  	
 end
 
-function plot_all_psd, pfreqs, powers, times
-
-	; Plot all spectra over time
-	ntimes = n_elements(powers[0,*])
-	colors = interpol([0,255], ntimes)
-	
-	loadct, 0	
-	;wset, 0
-	;window, 1, xs=400, ys=400
-	plot, [1, 2.5], [-8, -1], /nodata, /xs, /ys, ytitle='log!L10!N(PSD)', $
-              xtitle='log!L10!N(k) Rs!U-1!N', pos = [0.12, 0.18, 0.48, 0.42], /noerase
-
-	loadct, 72
-	reverse_ct	
-	for i=ntimes-1, 0, -1 do begin
-		oplot, pfreqs[*, i], powers[*, i], psym=1, color=colors[i], symsize=0.3
-	endfor
-	
-	trange = (times - times[0])/60.0
-	cgCOLORBAR, range=[trange[0], trange[-1]],  POSITION=[0.12, 0.43, 0.48, 0.45], $
-		title='Mins after '+anytim(times[0], /cc, /trun), /top, charsize=1.0
-
-END
 
 function apply_response, data, freq
 
@@ -300,7 +236,7 @@ pro psd_quiet_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, reb
 		pfsim = interpol([pfreq[0], pfreq[-1]], 100)
 		powsim = result[0] + result[1]*pfsim
 
-		if pvalue gt 1.0 then begin	
+		if pvalue gt 0.0 then begin	
 			
 			if keyword_set(plot_ipsd) then begin
 			plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
@@ -323,10 +259,12 @@ pro psd_quiet_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, reb
 			if vsave eq 0 then begin
 				powers = [power]
 				pfreqs = [pfreq]
+				sigcuts = sigcutoff
 				vsave = 1
 			endif else begin
 				powers = [ [powers], [[power]] ]
 				pfreqs = [ [pfreqs], [[pfreq]] ]
+				sigcuts = [sigcuts, sigcutoff]
 			endelse	
 		endif 	
 	endfor
@@ -350,7 +288,7 @@ pro psd_quiet_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, reb
 	;
 	;	Plot all psd
 	;
-	result = plot_all_psd(pfreqs, powers, stimes)
+	result = plot_all_psd(pfreqs, powers, stimes, pow=[-8.0, -1.0])
 
 	if keyword_set(postscript) then begin
 		device, /close
@@ -359,10 +297,19 @@ pro psd_quiet_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, reb
 
 	loadct, 0
 	window, 1, xs=400, ys=400  
- 	;-----------------------------------;
+ 	if keyword_set(postscript) then $
+                 setup_ps, './eps/nfar_mean_PSD_lin_quiet_time.eps', xsize=5, ysize=5
+	;-----------------------------------;
         ;
         ;       Plot mean PSD
         ;
-        result = plot_mean_psd(powers, pfreqs, pspecerr)
-stop
+        result = plot_mean_psd(powers, pfreqs, pspecerr, sigcuts)
+ 	
+	if keyword_set(postscript) then begin
+                device, /close
+                set_plot, 'x'
+        endif
+	
+	
+	stop
 END
