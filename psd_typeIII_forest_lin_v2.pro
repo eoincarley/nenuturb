@@ -125,6 +125,7 @@ pro psd_typeIII_forest_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postsc
 	if keyword_set(rebin) then begin	
 		nfbin = (size(data))[2]
 		data = data[0:39999, *]
+		utimes = utimes[0:39999]
 		tbin = 10000
 		data = rebin(data, tbin, nfbin)
 		utimes = congrid(utimes, tbin)
@@ -257,7 +258,7 @@ pro psd_typeIII_forest_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postsc
 	endif	
 
 	loadct, 0
-	window, 1, xs=500, ys=500
+	if ~keyword_set(postscript) then window, 1, xs=500, ys=500
 	
 	if keyword_set(postscript) then $
                  setup_ps, './eps/nfar_mean_PSD_lin_typeIII_forest.eps', xsize=5, ysize=5	

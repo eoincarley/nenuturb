@@ -28,7 +28,7 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 
 
    	READ_NU_SPEC, file, data,time,freq,beam,ndata,nt,dt,nf,df,ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=1;, fclean=6
         utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
         freq = reverse(freq)
@@ -67,7 +67,7 @@ function fit_psd, frequency, power, pspecerr=pspecerr
 	; If I give an errors (without the weights) then not everything is accepted. Some
 	; fits are rejected. However, the choice of err here is slightly arbitrary.
 
-        p = mpfitexpr(fit, frequency, power, err, weights=1/err^2, start, perror = perror, $
+        p = mpfitexpr(fit, frequency, power, err, weights=1/power^2, start, perror = perror, $
 		yfit=yfit, bestnorm=bestnorm, dof=dof, /quiet)
         perror = perror * SQRT(BESTNORM / DOF)
         aerr = perror[1]*2.0 ; 2-sigma uncertainty on the slope
@@ -118,18 +118,18 @@ function apply_response, data, freq
 END
 
 
-pro psd_quiet_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
+pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
 
 	; PSD of first type II. Code working.
 
-	; This version of the code excludes certain powerlaw fits based on their p-value.
+	; This code take a single sample in type IIc as an example of how the PSD is performed for one time.
 
 
 	path = '/databf2/nenufar-tf/ES11/2019/03/20190320_104900_20190320_125000_SUN_TRACKING_BHR/'
         file = 'SUN_TRACKING_20190320_104936_0.spectra'
 
-	t0 = 114.0
-	t1 = 116.0	
+	t0 = 42.0
+	t1 = 43.0	
 	f0 = 21.0
 	f1 = 33.0
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
@@ -139,38 +139,32 @@ pro psd_quiet_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, reb
 		setup_ps, './eps/nfar_PSD_lin_typeIIc.eps', xsize=10, ysize=14
 	endif else begin
 		!p.charsize=1.8
-		window, xs=800, ys=1200
+		window, xs=1200, ys=500
 	endelse	
-
-	;data = 10.0*alog10(data)
-	;data = constbacksub(data, /auto)
-	;data = smooth(data,3)
 	
 	if keyword_set(rebin) then begin	
 		nfbin = (size(data))[2]
-		data = data[0:19999, *]
-		utimes = utimes[0:19999]
-		tbin = 5000
+		data = data[0:9999, *]
+		utimes = utimes[0:9999]
+		tbin = 2000
 		data = rebin(data, tbin, nfbin)
 		utimes = congrid(utimes, tbin)
 		ntsteps=1
 	endif else begin
 		ntsteps=10
 	endelse	
-	
-	;data = apply_response(data, freq)
 
-	;stop
 	;------------------------------------------;
 	;	Empty template to get black ticks
 	;
-	posit=[0.12, 0.75, 0.95, 0.95]
+	posit=[0.08, 0.15, 0.28, 0.9]
 	loadct, 0
-        utplot, utimes, freq, yr=[f1,f0], /xs, /ys, xtitle=' ', ytitle='Frequency (MHz)', $
+        utplot, utimes, freq, yr=[f1,f0], /xs, /ys, xtitle='Time (UT)', ytitle='Frequency (MHz)', $
 		title='NenuFAR-ES11 '+time2file(utimes[0], /date), pos=posit, /normal, color=150, $
-		xr=[utimes[0], utimes[-1]], XTICKFORMAT="(A1)"
+		xr=[utimes[0], utimes[-1]], tick_unit=20.0
 	
         ;------------------------------------------;
+	;
 	;	     Plot spectrogram
 	;
 	loadct, 74
@@ -178,11 +172,10 @@ pro psd_quiet_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, reb
 	spectro_plot, sigrange(data), utimes, freq, /xs, /ys, $
 		ytitle=' ', xtitle=' ', yr=[f1, f0], /noerase, XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", $
 		position=posit, /normal, xr=[utimes[0], utimes[-1]]
-	;-----------------------------------------;
-	;	         Flatten	
-	;
-	;data = congrid(data, 1e4, 1984)
-	;utimes = congrid(utimes, 1e4)
+
+	tsample = anytim('2019-03-20T11:31:52', /utim)
+	outplot, [tsample, tsample], [f0, f1], linestyle=0, thick=3
+
 
 	;-----------------------------------------;
 	;	Each profile is evenly sampled
@@ -194,124 +187,64 @@ pro psd_quiet_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, reb
 	even_rads = interpol([rads[0], rads[-1]], n_elements(freq))
 	nt=n_elements(data[*,0])-1
 	def = even_rads[2]-even_rads[1]
-	sindices = fltarr(nt+1)
-	stimes = dblarr(nt+1)
-	vsave=0
 	loadct, 0
-
-	if ~keyword_set(postscript) then $
-		window, 1, xs=600, ys=600	
-	
 	pspecerr = 0.05
-	for i=0, nt, ntsteps do begin
-		prof = data[i, *]
-		even_prof = interpol(prof, rads, even_rads)
-		even_prof = even_prof/max(even_prof)
-
-		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$ 
-			/tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)
-
-		
-		pfreq = alog10(pfreq)
-		power = alog10(power)
-		ind0 = closest(pfreq, 1.0)
-		ind1 = closest(pfreq, 2.5)
-		pfreq = pfreq[ind0:ind1]
-		power = power[ind0:ind1]
-		sigcutoff = alog10(signif[0])
-		;power = power[where(power gt sigcutoff)]
-		;pfreq = pfreq[where(power gt sigcutoff)]
-		
-		;wset, 1
-		;plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(Power Rs!U-1!N)', $
-		;xtitle='log!L10!N(k Rs!U-1!N)';, yr=[1e8, 1e12]
-
-		result = fit_psd(pfreq, power, pspecerr=pspecerr)
-		pvalue = result[4]
-		
-		;print, ' ' 
-                ;print, 'Reduced chi square value: ' + string(chisq)
-                ;print, 'Prob random variables has better chi: '+ string(pvalue)+'%'
-                ;print, '---'    
 	
-		pfsim = interpol([pfreq[0], pfreq[-1]], 100)
-		powsim = result[0] + result[1]*pfsim
+	;----------------------------------------;
+	;	Get profile and plot.
+	;	
+	tindex = (where(utimes ge tsample))[0]
+	prof = data[tindex, *]
+	
+	plot, freq, prof/1e7, /xs, /ys, pos=[0.35, 0.15, 0.68, 0.9], /normal, /noerase, $
+		xtitle='Frequency (MHz)', ytitle='Intensity'
+	
+	;----------------------------------------------;
+	;  Get evenly sampled in space and perform PSD
+	;	
+	even_prof = interpol(prof, rads, even_rads)
+	even_prof = even_prof/max(even_prof)
 
-		if pvalue gt 0.0 then begin	
-			
-			if keyword_set(plot_ipsd) then begin
-			plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
-				xtitle='log!L10!N(k Rs!U-1!N)', $
-                        	title=anytim(utimes[i], /cc)+'  S:'+string(result[1], format='(f5.2)'), $
-				yr=[-6, -2];, /noerase, color=colors[i], psym=1
-                	
-			xerr = dblarr(n_elements(pfreq))
-			yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
-			oploterror, pfreq, power, xerr, yerr
-			oplot, pfsim, powsim, color=10
-			oplot, [1.0, 2.5], [sigcutoff, sigcutoff], color=200
-			;wait, 0.001	
-			
-			xyouts, 0.6, 0.8, pvalue, /normal
-			endif
-			
-			sindices[i] = result[1]
-			stimes[i] = utimes[i]
-			if vsave eq 0 then begin
-				powers = [power]
-				pfreqs = [pfreq]
-				sigcuts = sigcutoff
-				vsave = 1
-			endif else begin
-				powers = [ [powers], [[power]] ]
-				pfreqs = [ [pfreqs], [[pfreq]] ]
-				sigcuts = [sigcuts, sigcutoff]
-			endelse	
-		endif 	
-	endfor
+	power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$ 
+		/tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)
 
-	if ~keyword_set(postscript) then wset, 0
-	sindices = sindices[where(sindices ne 0)]	
-	stimes = stimes[where(stimes ne 0)]
-	;-----------------------------------;
-	;
-        ;       Plot alpha time series
-        ;
-	result = plot_alpha_time(stimes, sindices)
-
-	;-----------------------------------;
-	;
-	;   	Plot hist of spectral indices
-	;
-	result = plot_alpha_hist(sindices)
-
+	pfreq = alog10(pfreq)
+	power = alog10(power)
+	ind0 = closest(pfreq, 1.0)
+	ind1 = closest(pfreq, 2.5)
+	pfreq = pfreq[ind0:ind1]
+	power = power[ind0:ind1]
+	sigcutoff = alog10(signif[0])
+		
 	;----------------------------------;
-	;
-	;	Plot all psd
-	;
-	result = plot_all_psd(pfreqs, powers, stimes, pow=[-8.0, -1.0])
-
-	if keyword_set(postscript) then begin
-		device, /close
-		set_plot, 'x'
-	endif	
-
-	loadct, 0
-	if ~keyword_set(postscript) then window, 1, xs=400, ys=400  
- 	
-	if keyword_set(postscript) then $
-                 setup_ps, './eps/nfar_mean_PSD_lin_quiet_time.eps', xsize=5, ysize=5
-	;-----------------------------------;
-        ;
-        ;       Plot mean PSD
-        ;
-        result = plot_mean_psd(powers, pfreqs, pspecerr, sigcuts)
- 	
-	if keyword_set(postscript) then begin
-                device, /close
-                set_plot, 'x'
-        endif
+	;	Fit PSD and plot
+	; 
+	result = fit_psd(pfreq, power, pspecerr=pspecerr)
+	pvalue = result[4]
+		
+        ;print, 'Reduced chi square value: ' + string(chisq)
+        ;print, 'Prob random variables has better chi: '+ string(pvalue)+'%'
 	
+	pfsim = interpol([pfreq[0], pfreq[-1]], 100)
+	powsim = result[0] + result[1]*pfsim
+
+			
+	plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
+		xtitle='log!L10!N(k Rs!U-1!N)', $
+		yr=[-6, -2], /noerase, position=[0.75, 0.15, 0.99, 0.9], psym=10
+                	
+	xerr = dblarr(n_elements(pfreq))
+	yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
 	
-	stop
+	;oploterror, pfreq, power, xerr, yerr
+	set_line_color
+	oplot, pfsim, powsim, color=5, thick=3
+	oplot, [1.0, 2.5], [sigcutoff, sigcutoff], color=1, linestyle=1
+	
+	sindfit = string(round(result[1]*100.0)/100., format='(f6.2)')
+	alpha = cgsymbol('alpha')
+	legend,[alpha+':'+sindfit], linestyle=[0], color=[5], $
+                box=0, /top, /right, charsize=1.6, thick=[4]
+	
+stop
 END

@@ -24,7 +24,7 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 end
 
 
-pro response, points=points
+pro get_response, points=points
 
 	; This gets a spectrum from a quite time in the event and saves it to be used as a response 
 	; curve to normalise the dynamic spectra before a PSD is taken.

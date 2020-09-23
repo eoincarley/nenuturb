@@ -165,6 +165,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	if keyword_set(rebin) then begin	
 		nfbin = (size(data))[2]
 		data = data[0:11999, *]
+		utimes = utimes[0:11999]
 		tbin = 3000
 		data = rebin(data, tbin, nfbin)
 		utimes = congrid(utimes, tbin)
@@ -309,7 +310,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	endif	
 	
 	loadct, 0
-	window, 1, xs=700, ys=700	
+	if ~keyword_set(postscript) then window, 1, xs=700, ys=700	
 	;-----------------------------------;
     	;
     	;       Plot mean PSD
