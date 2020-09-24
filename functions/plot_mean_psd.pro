@@ -13,6 +13,9 @@ function plot_mean_psd, powers, pfreqs, pspecerr, sigcuts
         powsim = p[0] + p[1]*pfsim
         set_line_color
 
+	wavenum0=1.0+alog10(2.0*!pi)
+        wavenum1=2.5+alog10(2.0*!pi)
+	rsusMm = 696.34 ; Mm
         ;--------------------------;
         ;      Plot mean PSD
         ;
@@ -23,10 +26,10 @@ function plot_mean_psd, powers, pfreqs, pspecerr, sigcuts
 
         plot, mf, mp, /xs, /ys, ytitle='PSD', $
               pos = [0.15, 0.15, 0.9, 0.9], /noerase, thick=5, XTICKINTERVAL=0.5, /ylog, /xlog, $
-              xr=[10.0, 10.0^2.5], XTICKFORMAT="(A1)", xticklen=1e-10
+              xr=[10.0^wavenum0, 10.0^wavenum1], XTICKFORMAT="(A1)", xticklen=1e-10
 
-        axis, xaxis=0, xr = [10.0, 10.0^2.5], /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'
-        axis, xaxis=1, xr = [10.0/696.34, 10^2.5/696.34], /xlog, /xs, xtitle='(Mm!U-1!N)'
+        axis, xaxis=0, xr = [10.0^wavenum0, 10.0^wavenum1], /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'
+        axis, xaxis=1, xr = [10.0^wavenum0/rsusMm, 10^wavenum1/rsusMm], /xlog, /xs, xtitle='(Mm!U-1!N)'
 
         oplot, pfsim, powsim, color=5, thick=8
 	
