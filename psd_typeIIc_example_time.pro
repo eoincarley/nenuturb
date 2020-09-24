@@ -118,7 +118,7 @@ function apply_response, data, freq
 END
 
 
-pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
+pro psd_typeIIc_example_time, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
 
 	; PSD of first type II. Code working.
 
@@ -173,7 +173,7 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 		ytitle=' ', xtitle=' ', yr=[f1, f0], /noerase, XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", $
 		position=posit, /normal, xr=[utimes[0], utimes[-1]]
 
-	tsample = anytim('2019-03-20T11:32:17.100', /utim)
+	tsample = anytim('2019-03-20T11:31:52', /utim)
 	outplot, [tsample, tsample], [f0, f1], linestyle=0, thick=3
 
 
@@ -193,25 +193,23 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 	;----------------------------------------;
 	;	Get profile and plot.
 	;	
-	tindex = (where(utimes ge tsample))[0]
+	for tindex=0, n_elements(utimes)-1 do begin
+	wset, 0
+	;tindex = (where(utimes ge tsample))[0]
 	prof = data[tindex, *]
 	
+	plot, freq, prof/1e7, /xs, /ys, pos=[0.35, 0.15, 0.68, 0.9], /normal, $
+		xtitle='Frequency (MHz)', ytitle='Intensity', title=anytim(utimes[tindex], /cc)
 	
 	;----------------------------------------------;
 	;  Get evenly sampled in space and perform PSD
 	;	
 	even_prof = interpol(prof, rads, even_rads)
-	even_prof = even_prof/max(even_prof)	
-
-        plot, even_rads, even_prof/1e7, /xs, /ys, pos=[0.38, 0.15, 0.68, 0.9], /normal, /noerase, $
-                xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=1e-10
-
-	axis, xaxis=0, xr = [even_rads[0], even_rads[-1]], /xs, xtitle='Heliocentric distance (R!Ls!N)'
-	axis, xaxis=1, xr = [even_rads[0], even_rads[-1]]*696.34, /xs, xtitle='(Mm)'
+	even_prof = even_prof/max(even_prof)
 
 	power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$ 
 		/tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)
-	
+
 	pfreq = alog10(pfreq)
 	power = alog10(power)
 	ind0 = closest(pfreq, 1.0)
@@ -233,35 +231,23 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 	powsim = result[0] + result[1]*pfsim
 
 			
-	plot, 10^pfreq*2.0*!pi, 10^power, /xlog, /ylog, /xs, /ys, ytitle='PSD', $
-		xtitle=' ', $
-		yr=10^[-6, -2], /noerase, position=[0.75, 0.15, 0.99, 0.9], psym=10, $
-		XTICKFORMAT="(A1)", xticklen=1e-10
+	plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
+		xtitle='log!L10!N(k Rs!U-1!N)', $
+		yr=[-6, -2], /noerase, position=[0.75, 0.15, 0.99, 0.9], psym=10
                 	
-	axis, xaxis=0, xr = [10.0, 10.0^2.5]*2.0*!pi, /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'
-        axis, xaxis=1, xr = [10.0/696.34, 10^2.5/696.34]*2.0*!pi, /xlog, /xs, xtitle='(Mm!U-1!N)'
-	
-	;----------------------------;
-        ;    Plot 99% confidence 
-        ;
-	set_line_color
-        meansig = 10^sigcutoff
-        print, '99% confidence thresh: '+string(meansig)
-        oplot, 10^[pfsim[0], pfsim[-1]]*2.0*!pi, [meansig, meansig], linestyle=5, color=1
-
-
 	xerr = dblarr(n_elements(pfreq))
 	yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
 	
 	;oploterror, pfreq, power, xerr, yerr
 	set_line_color
-	oplot, 10^pfsim*2.0*!pi, 10^powsim, color=5, thick=3
-	oplot, 10^[1.0, 2.5], [sigcutoff, sigcutoff], color=1, linestyle=1
+	oplot, pfsim, powsim, color=5, thick=3
+	oplot, [1.0, 2.5], [sigcutoff, sigcutoff], color=1, linestyle=1
 	
 	sindfit = string(round(result[1]*100.0)/100., format='(f6.2)')
 	alpha = cgsymbol('alpha')
 	legend,[alpha+':'+sindfit], linestyle=[0], color=[5], $
                 box=0, /top, /right, charsize=1.6, thick=[4]
-	
+	if utimes[tindex] ge anytim('2019-03-20T11:32:17', /utim) then stop
+	endfor
 stop
 END
