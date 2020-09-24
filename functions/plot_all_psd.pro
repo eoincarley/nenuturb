@@ -9,8 +9,9 @@ function plot_all_psd, pfreqs, powers, times, powrange=powrange
        	wavenum0=1.0+alog10(2.0*!pi)
 	wavenum1=2.5+alog10(2.0*!pi)	
 	loadct, 0
-        plot, 10^[wavenum0, wavenum1], 10^powrange, /nodata, yr=10^powrange, /xs, /ys, ytitle='PSD', /ylog, /xlog, $
-              xtitle='Wavenumber Rs!U-1!N', pos = [0.12, 0.18, 0.48, 0.42], /noerase
+        plot, 10^[wavenum0, wavenum1], 10^powrange, xr=10^[wavenum0, wavenum1], /nodata, yr=10^powrange, $
+		/xs, /ys, ytitle='PSD', /ylog, /xlog, $
+        	xtitle='Wavenumber Rs!U-1!N', pos = [0.12, 0.18, 0.48, 0.42], /noerase
 
         loadct, 72
         reverse_ct

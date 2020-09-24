@@ -1,7 +1,9 @@
 pro compute_all_psds, data, utimes, freq, $
 	sindices=sindices, stimes=stimes, pfreqs=pfreqs, powers=powers, $
-	pspecerr=pspecerr, sigcuts=sigcuts, nsteps=nsteps
+	pspecerr=pspecerr, sigcuts=sigcuts, ntsteps=ntsteps, psdsmooth=psdsmooth, pvalcutoff=pvalcutoff
 
+
+	
 	;-----------------------------------------;
         ;       Each profile is evenly sampled
         ;       in f, but unevenly in space.
@@ -17,8 +19,6 @@ pro compute_all_psds, data, utimes, freq, $
         vsave=0
         loadct, 0
 
-	if ~keyword_set(postscript) then $
-                window, 1, xs=600, ys=600
         set_line_color
         pspecerr = 0.05
 
@@ -30,7 +30,7 @@ pro compute_all_psds, data, utimes, freq, $
                 even_prof = even_prof/max(even_prof)
 
                 power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$
-                        /tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)
+                        /tukey, width=psdsmooth, sig_level=0.01, SIGNIFICANCE=signif)
 
 
                 pfreq = alog10(pfreq*2.0*!pi) ; x 2pi to get wavenumber from 1/lambda
@@ -40,13 +40,6 @@ pro compute_all_psds, data, utimes, freq, $
                 pfreq = pfreq[ind0:ind1]
                 power = power[ind0:ind1]
                 sigcutoff = alog10(signif[0])
-                ;stop
-                ;power = power[where(power gt sigcutoff)]
-                ;pfreq = pfreq[where(power gt sigcutoff)]
-
-                ;wset, 1
-                ;plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(Power Rs!U-1!N)', $
-                ;xtitle='log!L10!N(k Rs!U-1!N)';, yr=[1e8, 1e12]
 
                 result = fit_psd(pfreq, power, pspecerr=pspecerr)
                 pvalue = result[4]
@@ -59,7 +52,7 @@ pro compute_all_psds, data, utimes, freq, $
                 pfsim = interpol([pfreq[0], pfreq[-1]], 100)
                 powsim = result[0] + result[1]*pfsim
 
-		if pvalue gt 1.0 then begin
+		if pvalue gt pvalcutoff and result[1] lt -1.0 then begin
 
                         if keyword_set(plot_ipsd) then begin
                         plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $

@@ -59,7 +59,9 @@ function fit_psd, frequency, power, pspecerr=pspecerr
 
         p = mpfitexpr(fit, frequency, power, err, weights=1/err^2, start, perror = perror, $
 		yfit=yfit, bestnorm=bestnorm, dof=dof, /quiet)
-        perror = perror * SQRT(BESTNORM / DOF)
+        
+	
+	perror = perror * SQRT(BESTNORM / DOF)
         aerr = perror[1]*2.0 ; 2-sigma uncertainty on the slope
         ierr = perror[0]*2.0 ; 2-sigma uncertainty on the intercept
 
@@ -94,29 +96,6 @@ function plot_alpha_hist, sindices
 
 end
 
-function plot_all_psd, pfreqs, powers, times
-
-	; Plot all spectra over time
-	ntimes = n_elements(powers[0,*])
-	colors = interpol([0,255], ntimes)
-	
-	loadct, 0	
-	plot, 10^[1, 2.5], 10^[-6, -2], yr=[1e-6, 1e-2], /xlog, /ylog, /nodata, /xs, /ys, ytitle='PSD', $
-              xtitle='Wavenumber Rs!U-1!N', pos = [0.12, 0.18, 0.48, 0.42], /noerase
-
-	loadct, 72
-	reverse_ct	
-	pfq = 10^pfreqs
-        pow = 10^powers
-	for i=ntimes-1, 0, -1 do begin
-		oplot, pfq[*, i], pow[*, i], psym=1, color=colors[i], symsize=0.3
-	endfor
-	
-	trange = (times - times[0])/60.0
-	cgCOLORBAR, range=[trange[0], trange[-1]],  POSITION=[0.12, 0.43, 0.48, 0.45], $
-		title='Mins after '+anytim(times[0], /cc, /trun), /top, charsize=1.0
-
-END
 
 function apply_response, data, freq
 
@@ -194,93 +173,20 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	spectro_plot, sigrange(data), utimes, freq, /xs, /ys, $
 		ytitle=' ', xtitle=' ', yr=[f1, f0], /noerase, XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", $
 		position=posit, /normal, xr=[utimes[0], utimes[-1]]
-	;-----------------------------------------;
-	;	         Flatten	
-	;
-	;data = congrid(data, 1e4, 1984)
-	;utimes = congrid(utimes, 1e4)
 
-	;-----------------------------------------;
-	;	Each profile is evenly sampled
-	;	in f, but unevenly in space.
-	; 	This gets an even sample in space
-	;	by interpolation.	
-	npoints=((freq*1e6/1.)/8980.0)^2.0 	
-	rads = density_to_radius(npoints, model='newkirk')
-	even_rads = interpol([rads[0], rads[-1]], n_elements(freq))
-	nt=n_elements(data[*,0])-1
-	def = even_rads[2]-even_rads[1]
-	sindices = fltarr(nt+1)
-	stimes = dblarr(nt+1)
-	vsave=0
-	loadct, 0
 
 	if ~keyword_set(postscript) then $
-		window, 1, xs=600, ys=600	
+                window, 1, xs=600, ys=600
+        ;-----------------------------------------;
+        ;         Get all PSDs and fits 
+        ;
+        compute_all_psds, data, utimes, freq, $
+                sindices=sindices, stimes=stimes, pfreqs=pfreqs, powers=powers, $
+                pspecerr=pspecerr, sigcuts=sigcuts, ntsteps=ntsteps, psdsmooth=0.002, pval=1.0
 
-	pspecerr = 0.10 ; Error on the power in PSD. Same as error on flux (?). No measure of this. Conservative estimate of 5-10%
-	for i=0, nt, ntsteps do begin
-		prof = data[i, *]
-		even_prof = interpol(prof, rads, even_rads)
-		even_prof = even_prof/max(even_prof)
 
-		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq, $
-			/tukey, width=0.002, sig_level=0.01, SIGNIFICANCE=signif)
 
-		
-		pfreq = alog10(pfreq)
-		power = alog10(power)
-		ind0 = closest(pfreq, 1.0)
-		ind1 = closest(pfreq, 2.5)
-		pfreq = pfreq[ind0:ind1]
-		power = power[ind0:ind1]
-		sigcutoff = alog10(signif[0])
 
-		result = fit_psd(pfreq, power, pspecerr=pspecerr)
-		pvalue = result[4]
-		
-		;print, ' ' 
-                ;print, 'Reduced chi square value: ' + string(chisq)
-                ;print, 'Prob random variables has better chi: '+ string(pvalue)+'%'
-                ;print, '---'    
-	
-		pfsim = interpol([pfreq[0], pfreq[-1]], 100)
-		powsim = result[0] + result[1]*pfsim
-
-		if pvalue ge 1.0 then begin	
-
-			if keyword_set(plot_ipsd) then begin	
-			plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
-				xtitle='log!L10!N(k Rs!U-1!N)', $
-                        ;	title=anytim(utimes[i], /cc)+'  S:'+string(result[1], format='(f5.2)'), $
-				yr=[-6, -1];, /noerase, color=colors[i], psym=1
-                	
-			xerr = dblarr(n_elements(pfreq))
-			yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
-			oploterror, pfreq, power, xerr, yerr
-			oplot, pfsim, powsim, color=100
-			xyouts, 0.6, 0.8, pvalue, /normal
-			oplot, [1.0, 2.5], [sigcutoff, sigcutoff], color=200
-		
-			if pvalue lt 0.0 then stop	
-			;wait, 0.001	
-			endif
-
-			sindices[i] = result[1]
-			stimes[i] = utimes[i]
-			if vsave eq 0 then begin
-				powers = [power]
-				pfreqs = [pfreq]
-				sigcuts = sigcutoff
-				vsave = 1
-			endif else begin
-				powers = [ [powers], [[power]] ]
-				pfreqs = [ [pfreqs], [[pfreq]] ]
-				sigcuts = [sigcuts, sigcutoff]
-			endelse	
-		endif 	
-	endfor
-	
 	if ~keyword_set(postscript) then wset, 0
 	
 	sindices = sindices[where(sindices ne 0)]	
@@ -302,7 +208,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	;
 	;	Plot all psd
 	;
-	result = plot_all_psd(pfreqs, powers, stimes)
+	result = plot_all_psd(pfreqs, powers, stimes, powrange=[-6.0,0.0])
 
 	if keyword_set(postscript) then begin
 		device, /close
