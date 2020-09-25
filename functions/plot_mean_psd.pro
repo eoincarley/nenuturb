@@ -47,7 +47,7 @@ function plot_mean_psd, powers, pfreqs, pspecerr, sigcuts
 	;
         meansig = 10^mean(sigcuts)
         print, '99% confidence thresh: '+string(meansig)
-	oplot, [pfsim[0], pfsim[-1]], [meansig, meansig], linestyle=5, color=1
+	oplot, [pfsim[0], pfsim[-1]], [meansig, meansig], linestyle=5, color=0
 	
 	;----------------------------;
         ;    Plot errors 

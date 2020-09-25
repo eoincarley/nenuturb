@@ -91,7 +91,7 @@ function plot_alpha_hist, sindices
 	set_line_color
         plothist, sindices, bin=0.025, $
                 xtitle='PSD spectral index '+alpha, ytitle='Count', $
-                pos = [0.59, 0.18, 0.95, 0.42], /noerase, color=0, yr=[0, 250], thick=4
+                pos = [0.59, 0.18, 0.95, 0.42], /noerase, color=0, yr=[0, 600], thick=4
         meanalpha = string(round(median(sindices)*100.)/100.0, format='(f5.2)')
         oplot, [meanalpha, meanalpha], [0, 600.0], color=5, thick=5
         oplot, [-1.66, -1.66], [0, 600.0], color=7, thick=4, linestyle=5
@@ -215,12 +215,12 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		
 
 	loadct, 0
-	if ~keyword_set(postscript) then window, 1, xs=400, ys=400  
+	if ~keyword_set(postscript) then window, 1, xs=600, ys=600  
  	;-----------------------------------;
         ;
         ;       Plot mean PSD
         ;
-        if keyword_set(postscript) then setup_ps, './eps/nfar_mean_PSD_lin_typeIIc.eps', xsize=5, ysize=5
+        if keyword_set(postscript) then setup_ps, './eps/nfar_mean_PSD_lin_typeIIc.eps', xsize=6, ysize=6
 
  	result = plot_mean_psd(powers, pfreqs, pspecerr, sigcuts)
 

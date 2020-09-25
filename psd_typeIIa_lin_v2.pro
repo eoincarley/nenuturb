@@ -124,7 +124,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 
 	t0 = 33.0
         t1 = 34.5
-        f0 = 21.5
+        f0 = 21.0
         f1 = 24.0
 	
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
@@ -196,7 +196,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	;
     	;       Plot alpha time series
     	;
-	result = plot_alpha_time(stimes, sindices)
+	;result = plot_alpha_time(stimes, sindices)
 
 	;-----------------------------------;
 	;
@@ -222,7 +222,7 @@ pro psd_typeIIa_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
     	;       Plot mean PSD
     	;
     	if keyword_set(postscript) then $
-		 setup_ps, './eps/nfar_mean_PSD_lin_typeIIa.eps', xsize=5, ysize=5
+		 setup_ps, './eps/nfar_mean_PSD_lin_typeIIa.eps', xsize=6, ysize=6
 
  	result = plot_mean_psd(powers, pfreqs, pspecerr, sigcuts)
 

@@ -121,7 +121,7 @@ pro psd_typeIIb_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 
 	t0 = 33.0
         t1 = 34.5
-        f0 = 33.0
+        f0 = 30.0
         f1 = 55.0
 	
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
@@ -171,7 +171,6 @@ pro psd_typeIIb_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		ytitle=' ', xtitle=' ', yr=[f1, f0], /noerase, XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", $
 		position=posit, /normal, xr=[utimes[0], utimes[-1]]
 	
-	stop
 	if ~keyword_set(postscript) then $
                 window, 1, xs=600, ys=600
         ;-----------------------------------------;
@@ -179,7 +178,7 @@ pro psd_typeIIb_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
         ;
         compute_all_psds, data, utimes, freq, $
                 sindices=sindices, stimes=stimes, pfreqs=pfreqs, powers=powers, $
-                pspecerr=pspecerr, sigcuts=sigcuts, ntsteps=ntsteps, psdsmooth=0.001, pvalue=1.0
+                pspecerr=pspecerr, sigcuts=sigcuts, ntsteps=ntsteps, psdsmooth=0.001, pval=1.0
 
 
         if ~keyword_set(postscript) then wset, 0
@@ -191,7 +190,7 @@ pro psd_typeIIb_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	;
     	;       Plot alpha time series
     	;
-	result = plot_alpha_time(stimes, sindices)
+	;result = plot_alpha_time(stimes, sindices)
 
 	;-----------------------------------;
 	;
@@ -216,7 +215,7 @@ pro psd_typeIIb_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
     	;       Plot mean PSD
     	;
 	if keyword_set(postscript) then $
-		setup_ps, './eps/nfar_mean_PSD_lin_typeIIb.eps', xsize=5, ysize=5
+		setup_ps, './eps/nfar_mean_PSD_lin_typeIIb.eps', xsize=6, ysize=6
     	
 	result = plot_mean_psd(powers, pfreqs, pspecerr, sigcuts)
 

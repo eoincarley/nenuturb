@@ -2,7 +2,7 @@ pro setup_ps, name, xsize=xsize, ysize=ysize
   
    set_plot,'ps'
    !p.font=0
-   !p.charsize=1.5
+   !p.charsize=1.2
    device, filename = name, $
           /color, $
           /helvetica, $
@@ -34,25 +34,6 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
         freq = reverse(freq)
 end
 
-function plot_alpha_time, utimes, sindices
-	
-	set_line_color
-        sturb0 = -5/3.
-        sturb1 = -7/3.
-        alpha = cgsymbol('alpha')
-        utplot, utimes, sindices, pos=[0.12, 0.54, 0.95, 0.74], $
-                /noerase, /xs, /ys, yr=[-3, -1.0], $
-                psym=1, symsize=0.8, color=5, xr=[utimes[0], utimes[-1]], $
-                xtitle='Time (UT)', ytitle='PSD spectral index ('+alpha+')'
-
-        outplot, [utimes[0], utimes[-1]], [sturb0, sturb0], linestyle=5, thick=4, color=7
-        outplot, [utimes[0], utimes[-1]], [sturb1, sturb1], linestyle=0, thick=4, color=6
-        outplot, utimes, sindices, psym=1, symsize=0.5, color=5
-        legend,[alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[5, 0], color=[7, 6], $
-                box=0, /top, /right, charsize=1.4, thick=[4, 6]
-
-
-end
 
 function fit_psd, frequency, power, pspecerr=pspecerr
 	
@@ -84,40 +65,6 @@ function fit_psd, frequency, power, pspecerr=pspecerr
 end
 
 
-function plot_alpha_hist, sindices
-
-	alpha = cgsymbol('alpha')
-	set_line_color
-        plothist, sindices, bin=0.025, $
-                xtitle='PSD spectral index '+alpha, ytitle='Count', $
-                pos = [0.59, 0.18, 0.95, 0.42], /noerase, color=0, yr=[0, 250], thick=4
-        meanalpha = string(round(median(sindices)*100.)/100.0, format='(f5.2)')
-        oplot, [meanalpha, meanalpha], [0, 600.0], color=5, thick=5
-        oplot, [-1.66, -1.66], [0, 600.0], color=7, thick=4, linestyle=5
-	oplot, [-2.33, -2.33], [0, 600.0], color=6, thick=4, linestyle=5
-
-        legend,[cgsymbol('mu')+'!L'+alpha+'!N: '+meanalpha, alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[0, 5, 5], color=[5, 7, 6], $
-                box=0, /top, /left, charsize=1.4, thick=[5,4,4]
- 	
-end
-
-
-function apply_response, data, freq
-
-	restore, 'nfar_response.sav'
-	ind0 = where(rfreq eq freq[0])
-	ind1 = where(rfreq eq freq[-1])
-	response = response[ind0:ind1]
-	
-	for i=0, n_elements(data[*, 0])-1 do begin
-		data[i, *] = data[i, *]/response
-	endfor	
-	
-	return, data
-
-END
-
-
 pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
 
 	; PSD of first type II. Code working.
@@ -136,7 +83,7 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/nfar_PSD_lin_typeIIc.eps', xsize=10, ysize=14
+		setup_ps, './eps/nfar_PSD_typeIIc_example.eps', xsize=12, ysize=5
 	endif else begin
 		!p.charsize=1.8
 		window, xs=1200, ys=500
@@ -174,8 +121,8 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 		position=posit, /normal, xr=[utimes[0], utimes[-1]]
 
 	tsample = anytim('2019-03-20T11:32:17.100', /utim)
-	outplot, [tsample, tsample], [f0, f1], linestyle=0, thick=3
-
+	outplot, [tsample, tsample], [f0, f1], linestyle=0, thick=5
+	;xyouts, 0.1, 0.85, 'a', charthick=4, /normal
 
 	;-----------------------------------------;
 	;	Each profile is evenly sampled
@@ -203,7 +150,7 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 	even_prof = interpol(prof, rads, even_rads)
 	even_prof = even_prof/max(even_prof)	
 
-        plot, even_rads, even_prof/1e7, /xs, /ys, pos=[0.38, 0.15, 0.68, 0.9], /normal, /noerase, $
+        plot, even_rads, even_prof/1e7, /xs, /ys, pos=[0.37, 0.15, 0.68, 0.9], /normal, /noerase, $
                 xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=1e-10
 
 	axis, xaxis=0, xr = [even_rads[0], even_rads[-1]], /xs, xtitle='Heliocentric distance (R!Ls!N)'
@@ -219,7 +166,9 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 	pfreq = pfreq[ind0:ind1]
 	power = power[ind0:ind1]
 	sigcutoff = alog10(signif[0])
-		
+	
+	;xyouts, 0.4, 0.85, 'b', charthick=4, /normal
+
 	;----------------------------------;
 	;	Fit PSD and plot
 	; 
@@ -234,7 +183,7 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 
 			
 	plot, 10^pfreq*2.0*!pi, 10^power, /xlog, /ylog, /xs, /ys, ytitle='PSD', $
-		xtitle=' ', $
+		xtitle=' ', thick=2, $
 		yr=10^[-6, -2], /noerase, position=[0.75, 0.15, 0.99, 0.9], psym=10, $
 		XTICKFORMAT="(A1)", xticklen=1e-10
                 	
@@ -255,13 +204,18 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 	
 	;oploterror, pfreq, power, xerr, yerr
 	set_line_color
-	oplot, 10^pfsim*2.0*!pi, 10^powsim, color=5, thick=3
+	oplot, 10^pfsim*2.0*!pi, 10^powsim, color=5, thick=4
 	oplot, 10^[1.0, 2.5], [sigcutoff, sigcutoff], color=1, linestyle=1
 	
 	sindfit = string(round(result[1]*100.0)/100., format='(f6.2)')
 	alpha = cgsymbol('alpha')
 	legend,[alpha+':'+sindfit], linestyle=[0], color=[5], $
-                box=0, /top, /right, charsize=1.6, thick=[4]
+                box=0, /top, /right, thick=[4]
+	
+	;xyouts, 0.79, 0.85, 'c', charthick=4, /normal
+
+	if keyword_set(postscript) then device, /close
+	set_plot, 'x'
 	
 stop
 END
