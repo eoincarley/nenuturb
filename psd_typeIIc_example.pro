@@ -28,7 +28,7 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 
 
    	READ_NU_SPEC, file, data,time,freq,beam,ndata,nt,dt,nf,df,ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=1;, fclean=6
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=1, ntimes=3;, fclean=6
         utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
         freq = reverse(freq)
@@ -89,17 +89,6 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 		window, xs=1200, ys=500
 	endelse	
 	
-	if keyword_set(rebin) then begin	
-		nfbin = (size(data))[2]
-		data = data[0:9999, *]
-		utimes = utimes[0:9999]
-		tbin = 2000
-		data = rebin(data, tbin, nfbin)
-		utimes = congrid(utimes, tbin)
-		ntsteps=1
-	endif else begin
-		ntsteps=10
-	endelse	
 
 	;------------------------------------------;
 	;	Empty template to get black ticks
