@@ -136,7 +136,10 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 	def = even_rads[2]-even_rads[1]
 	loadct, 0
 	pspecerr = 0.05
-	
+	wavenum0 = 1.0+alog10(2.0*!pi)
+        wavenum1 = 2.5+alog10(2.0*!pi)
+        rsunMm = 696.34 ; Mm
+
 	;----------------------------------------;
 	;	Get profile and plot.
 	;	
@@ -154,15 +157,15 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
                 xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=1e-10
 
 	axis, xaxis=0, xr = [even_rads[0], even_rads[-1]], /xs, xtitle='Heliocentric distance (R!Ls!N)'
-	axis, xaxis=1, xr = [even_rads[0], even_rads[-1]]*696.34, /xs, xtitle='(Mm)'
+	axis, xaxis=1, xr = [even_rads[0], even_rads[-1]]*rsunMm, /xs, xtitle='(Mm)'
 
 	power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$ 
 		/tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)
 	
-	pfreq = alog10(pfreq)
+	pfreq = alog10(pfreq*2.0*!pi)
 	power = alog10(power)
-	ind0 = closest(pfreq, 1.0)
-	ind1 = closest(pfreq, 2.5)
+	ind0 = closest(pfreq, wavenum0)
+	ind1 = closest(pfreq, wavenum1)
 	pfreq = pfreq[ind0:ind1]
 	power = power[ind0:ind1]
 	sigcutoff = alog10(signif[0])
@@ -182,13 +185,13 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 	powsim = result[0] + result[1]*pfsim
 
 			
-	plot, 10^pfreq*2.0*!pi, 10^power, /xlog, /ylog, /xs, /ys, ytitle='PSD', $
+	plot, 10^pfreq, 10^power, /xlog, /ylog, /xs, /ys, ytitle='PSD', $
 		xtitle=' ', thick=2, $
 		yr=10^[-6, -2], /noerase, position=[0.75, 0.15, 0.99, 0.9], psym=10, $
 		XTICKFORMAT="(A1)", xticklen=1e-10
                 	
-	axis, xaxis=0, xr = [10.0, 10.0^2.5]*2.0*!pi, /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'
-        axis, xaxis=1, xr = [10.0/696.34, 10^2.5/696.34]*2.0*!pi, /xlog, /xs, xtitle='(Mm!U-1!N)'
+	axis, xaxis=0, xr = [10.0^wavenum0, 10.0^wavenum1], /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'
+        axis, xaxis=1, xr = [10.0^wavenum0/rsunMm, 10^wavenum1/rsunMm], /xlog, /xs, xtitle='(Mm!U-1!N)'
 	
 	;----------------------------;
         ;    Plot 99% confidence 
@@ -196,7 +199,7 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 	set_line_color
         meansig = 10^sigcutoff
         print, '99% confidence thresh: '+string(meansig)
-        oplot, 10^[pfsim[0], pfsim[-1]]*2.0*!pi, [meansig, meansig], linestyle=5, color=1
+        oplot, 10^[pfsim[0], pfsim[-1]], [meansig, meansig], linestyle=5, color=1
 
 
 	xerr = dblarr(n_elements(pfreq))
@@ -204,8 +207,8 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 	
 	;oploterror, pfreq, power, xerr, yerr
 	set_line_color
-	oplot, 10^pfsim*2.0*!pi, 10^powsim, color=5, thick=4
-	oplot, 10^[1.0, 2.5], [sigcutoff, sigcutoff], color=1, linestyle=1
+	oplot, 10^pfsim, 10^powsim, color=5, thick=4
+	oplot, [10^wavenum0, 10^wavenum1], [sigcutoff, sigcutoff], color=1, linestyle=1
 	
 	sindfit = string(round(result[1]*100.0)/100., format='(f6.2)')
 	alpha = cgsymbol('alpha')

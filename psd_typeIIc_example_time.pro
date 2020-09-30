@@ -124,6 +124,9 @@ pro psd_typeIIc_example_time, save=save, plot_ipsd=plot_ipsd, postscript=postscr
 
 	; This code take a single sample in type IIc as an example of how the PSD is performed for one time.
 
+	; This one step through time to find a good example.
+
+	; psd_typeIIc_example.pro plots the good example.
 
 	path = '/databf2/nenufar-tf/ES11/2019/03/20190320_104900_20190320_125000_SUN_TRACKING_BHR/'
         file = 'SUN_TRACKING_20190320_104936_0.spectra'
