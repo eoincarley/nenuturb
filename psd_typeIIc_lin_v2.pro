@@ -29,7 +29,7 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 
 
    	READ_NU_SPEC, file, data,time,freq,beam,ndata,nt,dt,nf,df,ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3;, fclean=6
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=4;, fclean=6
         utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
         freq = reverse(freq)
@@ -52,35 +52,6 @@ function plot_alpha_time, utimes, sindices
         legend,[alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[5, 0], color=[7, 6], $
                 box=0, /top, /right, charsize=1.4, thick=[4, 6]
 
-
-end
-
-function fit_psd, frequency, power, pspecerr=pspecerr
-	
-	start = [-1, -1]
-        fit = 'p[0] + p[1]*x'
-        err = power
-        err[*] = pspecerr*abs(power)
-
-	; Note here that if I supply the weights keyword with poisson weighting the fit
-	; gives a p-value of 1 for eveything, e.g. perfect fit within error. Every fit
-	; is then accepted below, even a few power spectra that are not power law.
-	; If I give an errors (without the weights) then not everything is accepted. Some
-	; fits are rejected. However, the choice of err here is slightly arbitrary.
-
-        p = mpfitexpr(fit, frequency, power, err, weights=1/power^2, start, perror = perror, $
-		yfit=yfit, bestnorm=bestnorm, dof=dof, /quiet)
-        perror = perror * SQRT(BESTNORM / DOF)
-        aerr = perror[1]*2.0 ; 2-sigma uncertainty on the slope
-        ierr = perror[0]*2.0 ; 2-sigma uncertainty on the intercept
-
-	;----------------------------------------;
-	; This is the probability the chi^2 score 
-	; is worse than calculated value.
-	; If <5% reject the fit
-	pvalue = (1.0-CHISQR_PDF(bestnorm, DOF))*100.0	
-
-	return, [p[0], p[1], aerr, ierr, pvalue]
 
 end
 
@@ -143,22 +114,6 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		window, xs=800, ys=1200
 	endelse	
 
-	;data = 10.0*alog10(data)
-	;data = constbacksub(data, /auto)
-	;data = smooth(data,3)
-	
-	if keyword_set(rebin) then begin	
-		nfbin = (size(data))[2]
-		data = data[0:39999, *]
-		utimes = utimes[0:39999]
-		tbin = 10000
-		data = rebin(data, tbin, nfbin)
-		utimes = congrid(utimes, tbin)
-		ntsteps=1
-	endif else begin
-		ntsteps=10
-	endelse	
-	
 	;data = apply_response(data, freq)
 
 	;------------------------------------------;
@@ -186,7 +141,7 @@ pro psd_typeIIc_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	;
 	compute_all_psds, data, utimes, freq, $
         	sindices=sindices, stimes=stimes, pfreqs=pfreqs, powers=powers, $
-        	pspecerr=pspecerr, sigcuts=sigcuts, ntsteps=ntsteps, psdsmooth=0.001, pval=1.0
+        	pspecerr=pspecerr, sigcuts=sigcuts, component=2,  psdsmooth=0.001, pval=1.0
 
 	
 	if ~keyword_set(postscript) then wset, 0

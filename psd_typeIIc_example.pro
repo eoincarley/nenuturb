@@ -118,7 +118,7 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 	;	in f, but unevenly in space.
 	; 	This gets an even sample in space
 	;	by interpolation.	
-	npoints=((freq*1e6/1.)/8980.0)^2.0 	
+	npoints=((freq*1e6/2.)/8980.0)^2.0 	
 	rads = density_to_radius(npoints, model='newkirk')
 	even_rads = interpol([rads[0], rads[-1]], n_elements(freq))
 	nt=n_elements(data[*,0])-1
@@ -135,14 +135,13 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 	tindex = (where(utimes ge tsample))[0]
 	prof = data[tindex, *]
 	
-	
 	;----------------------------------------------;
 	;  Get evenly sampled in space and perform PSD
 	;	
 	even_prof = interpol(prof, rads, even_rads)
 	even_prof = even_prof/max(even_prof)	
 
-        plot, even_rads, even_prof/1e7, /xs, /ys, pos=[0.37, 0.15, 0.68, 0.9], /normal, /noerase, $
+        plot, even_rads, even_prof, /xs, /ys, pos=[0.37, 0.15, 0.68, 0.9], /normal, /noerase, $
                 xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=1e-10
 
 	axis, xaxis=0, xr = [even_rads[0], even_rads[-1]], /xs, xtitle='Heliocentric distance (R!Ls!N)'

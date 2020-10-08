@@ -13,8 +13,8 @@ function plot_mean_psd, powers, pfreqs, pspecerr, sigcuts
         powsim = p[0] + p[1]*pfsim
         set_line_color
 
-	wavenum0=1.0+alog10(2.0*!pi)
-        wavenum1=2.5+alog10(2.0*!pi)
+	wavenum0 = 1.0+alog10(2.0*!pi)
+        wavenum1 = 3.0 ;2.5+alog10(2.0*!pi)
 	rsusMm = 696.34 ; Mm
         ;--------------------------;
         ;      Plot mean PSD

@@ -81,21 +81,28 @@ pro plot_nfar, data, utimes, freq, scl=scl, pos=pos
         data = reverse(data, 2)
         freq = reverse(freq)
 	data = smooth(data, 3)
-        ;data=alog10(data)
+        ;data = alog10(data)
 
 	loadct, 74
         reverse_ct
         spectro_plot, bytscl(data, scl[0], scl[1]), utimes, freq, /xs, /ys, $
-                ytitle=' ', xtitle=' ', yr=[57, 20], /noerase, XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", $
-                position=pos, /normal, title=' ', xr=[utimes[0], utimes[-1]]
+                ytitle=' ', xtitle=' ', yr=[60, 20], /noerase, XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", $
+                position=pos, /ylog , /normal, title=' ', ytickname=['60', '50', '40', '30', '20'], xr=[utimes[0], utimes[-1]], yticklen=-5e-10
 
         ;------------------------------------------;
         ;     Empty template to get black ticks
         ;
         loadct, 0
-        utplot, utimes, freq, yr=[57,20], /xs, /ys, /nodata, /noerase, $
-                xtitle='Time (UT)', ytitle='Frequency (MHz)', $
-                title='  ', pos=pos, /normal, color=250, xr=[utimes[0], utimes[-1]]
+        utplot, utimes, freq, yr=[60,20], /xs, /ys, /ylog, /nodata, /noerase, $
+                xtitle='Time (UT)', yticklen=-5e-3, $
+                title='  ', pos=pos, /normal, color=250, ytickname=['60', '50', '40', '30', '20'], ytickv=[60, 50, 40, 30, 20], xr=[utimes[0], utimes[-1]]
+
+	data = cgScaleVector(Findgen(101), 100, 1000)
+   	ticks = LogLevels([20,60], /fine)
+   	nticks = N_Elements(ticks)
+	set_line_color
+   	cgPlot, data, /YLOG, YRANGE=[60,20], YTICKS=nticks-1, $
+      		YTICKV=Reverse(ticks), ticklen=-5e-3,  pos=pos,  color=200, AXESCOLOR=1, /noerase, XTICKFORMAT="(A1)", ytitle='Frequency (MHz)' 
 
 end
 
@@ -117,33 +124,12 @@ pro plot_goes_nenufar_v2, save=save, postscript=postscript
         ;------------------------------------;
 	; 	First spectrogram
 	;
-	READ_NU_SPEC, path+file, data,time,freq,beam,ndata,nt,dt,nf,df,ns, ntimes=10, tmin=29*60.0, tmax=45*60.0
+	READ_NU_SPEC, path+file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
+		ntimes=10, tmin=29*60.0, tmax=45*60.0, fflat=3
         utimes0=anytim(file2time(file), /utim) + time
 	
-	if keyword_set(rebin) then begin
-                nfbin = (size(data))[2]
-                data = data[0:11999, *]
-                tbin = 3000
-                data = rebin(data, tbin, nfbin)
-                utimes = congrid(utimes, tbin)
-                ntsteps=1
-        endif
-	plot_nfar, data, utimes0, freq, scl=[4.5e5, 5e7], pos=[0.2, 0.45, 0.85, 0.7]
+	plot_nfar, data, utimes0,  freq, scl=[4.5e5, 5e7], pos=[0.2, 0.45, 0.85, 0.7]
 	
-	;------------------------------------;
-	;	Second spectrogram
-	;
-	;READ_NU_SPEC, path+file, data,time,freq,beam,ndata,nt,dt,nf,df,ns, tmin=39*60.0, tmax=51*60.0
-        ;utimes1=anytim(file2time(file), /utim) + time
-	if keyword_set(rebin) then begin
-                nfbin = (size(data))[2]
-                data = data[0:11999, *]
-                tbin = 3000
-                data = rebin(data, tbin, nfbin)
-                utimes = congrid(utimes, tbin)
-                ntsteps=1
-        endif
-	;plot_nfar, data, utimes1, freq, scl=[4.5e5, 4e7], pos=[0.2, 0.12, 0.85, 0.37]
 		
 	;-------------------------;
         ;       Plot GOES

@@ -28,7 +28,7 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 
 
    	READ_NU_SPEC, file, data,time,freq,beam,ndata,nt,dt,nf,df,ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=1;, fclean=6
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=1, ntimes=4;, fclean=6
         utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
         freq = reverse(freq)
@@ -145,17 +145,6 @@ pro psd_typeIIc_example_time, save=save, plot_ipsd=plot_ipsd, postscript=postscr
 		window, xs=1200, ys=500
 	endelse	
 	
-	if keyword_set(rebin) then begin	
-		nfbin = (size(data))[2]
-		data = data[0:9999, *]
-		utimes = utimes[0:9999]
-		tbin = 2000
-		data = rebin(data, tbin, nfbin)
-		utimes = congrid(utimes, tbin)
-		ntsteps=1
-	endif else begin
-		ntsteps=10
-	endelse	
 
 	;------------------------------------------;
 	;	Empty template to get black ticks
@@ -185,72 +174,88 @@ pro psd_typeIIc_example_time, save=save, plot_ipsd=plot_ipsd, postscript=postscr
 	;	in f, but unevenly in space.
 	; 	This gets an even sample in space
 	;	by interpolation.	
-	npoints=((freq*1e6/1.)/8980.0)^2.0 	
+	npoints=((freq*1e6/2.)/8980.0)^2.0 	
 	rads = density_to_radius(npoints, model='newkirk')
 	even_rads = interpol([rads[0], rads[-1]], n_elements(freq))
 	nt=n_elements(data[*,0])-1
 	def = even_rads[2]-even_rads[1]
 	loadct, 0
 	pspecerr = 0.05
+	wavenum0 = 1.0+alog10(2.0*!pi)
+        wavenum1 = 2.5+alog10(2.0*!pi)
+        rsunMm = 696.34 ; Mm	
 	
 	;----------------------------------------;
 	;	Get profile and plot.
 	;	
 	for tindex=0, n_elements(utimes)-1 do begin
-	wset, 0
-	;tindex = (where(utimes ge tsample))[0]
-	prof = data[tindex, *]
+		wset, 0
+		;tindex = (where(utimes ge tsample))[0]
+		prof = data[tindex, *]
 	
-	plot, freq, prof/1e7, /xs, /ys, pos=[0.35, 0.15, 0.68, 0.9], /normal, $
-		xtitle='Frequency (MHz)', ytitle='Intensity', title=anytim(utimes[tindex], /cc)
+		plot, freq, prof, /xs, /ys, pos=[0.35, 0.15, 0.68, 0.9], /normal, $
+			xtitle='Frequency (MHz)', ytitle='Intensity', title=anytim(utimes[tindex], /cc)
 	
-	;----------------------------------------------;
-	;  Get evenly sampled in space and perform PSD
-	;	
-	even_prof = interpol(prof, rads, even_rads)
-	even_prof = even_prof/max(even_prof)
+		;----------------------------------------------;
+		;  Get evenly sampled in space and perform PSD
+		;	
+		even_prof = interpol(prof, rads, even_rads)
+		even_prof = even_prof/max(even_prof)
 
-	power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$ 
-		/tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)
+		power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$ 
+			/tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)
 
-	pfreq = alog10(pfreq)
-	power = alog10(power)
-	ind0 = closest(pfreq, 1.0)
-	ind1 = closest(pfreq, 2.5)
-	pfreq = pfreq[ind0:ind1]
-	power = power[ind0:ind1]
-	sigcutoff = alog10(signif[0])
+		pfreq = alog10(pfreq*2.0*!pi)
+        	power = alog10(power)
+        	ind0 = closest(pfreq, wavenum0)
+        	ind1 = closest(pfreq, wavenum1)
+		pfreq = pfreq[ind0:ind1]
+		power = power[ind0:ind1]
+		sigcutoff = alog10(signif[0])
 		
-	;----------------------------------;
-	;	Fit PSD and plot
-	; 
-	result = fit_psd(pfreq, power, pspecerr=pspecerr)
-	pvalue = result[4]
+		;----------------------------------;
+		;	Fit PSD and plot
+		; 
+		result = fit_psd(pfreq, power, pspecerr=pspecerr)
+		pvalue = result[4]
 		
-        ;print, 'Reduced chi square value: ' + string(chisq)
-        ;print, 'Prob random variables has better chi: '+ string(pvalue)+'%'
+	        ;print, 'Reduced chi square value: ' + string(chisq)
+	        ;print, 'Prob random variables has better chi: '+ string(pvalue)+'%'
 	
-	pfsim = interpol([pfreq[0], pfreq[-1]], 100)
-	powsim = result[0] + result[1]*pfsim
+		pfsim = interpol([pfreq[0], pfreq[-1]], 100)
+		powsim = result[0] + result[1]*pfsim
+			        
+		plot, 10^pfreq, 10^power, /xlog, /ylog, /xs, /ys, ytitle='PSD', $
+                	xtitle=' ', thick=2, $
+                	yr=10^[-6, -2], /noerase, position=[0.75, 0.15, 0.99, 0.9], psym=10, $
+                	XTICKFORMAT="(A1)", xticklen=1e-10
 
-			
-	plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $
-		xtitle='log!L10!N(k Rs!U-1!N)', $
-		yr=[-6, -2], /noerase, position=[0.75, 0.15, 0.99, 0.9], psym=10
-                	
-	xerr = dblarr(n_elements(pfreq))
-	yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
+	        axis, xaxis=0, xr = [10.0^wavenum0, 10.0^wavenum1], /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'
+	        axis, xaxis=1, xr = [10.0^wavenum0/rsunMm, 10^wavenum1/rsunMm], /xlog, /xs, xtitle='(Mm!U-1!N)'
+
+		;----------------------------;
+	        ;    Plot 99% confidence 
+	        ;
+	        set_line_color
+	        meansig = 10^sigcutoff
+	        ;print, '99% confidence thresh: '+string(meansig)
+	        oplot, 10^[pfsim[0], pfsim[-1]], [meansig, meansig], linestyle=5, color=1
+
+	        xerr = dblarr(n_elements(pfreq))
+	        yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
+
+	        ;oploterror, pfreq, power, xerr, yerr
+	        set_line_color
+	        oplot, 10^pfsim, 10^powsim, color=5, thick=4
+	        oplot, [10^wavenum0, 10^wavenum1], [sigcutoff, sigcutoff], color=1, linestyle=1
+
+	        sindfit = string(round(result[1]*100.0)/100., format='(f6.2)')
+	        alpha = cgsymbol('alpha')
+	        legend,[alpha+':'+sindfit], linestyle=[0], color=[5], $
+	                box=0, /top, /right, thick=[4]
 	
-	;oploterror, pfreq, power, xerr, yerr
-	set_line_color
-	oplot, pfsim, powsim, color=5, thick=3
-	oplot, [1.0, 2.5], [sigcutoff, sigcutoff], color=1, linestyle=1
-	
-	sindfit = string(round(result[1]*100.0)/100., format='(f6.2)')
-	alpha = cgsymbol('alpha')
-	legend,[alpha+':'+sindfit], linestyle=[0], color=[5], $
-                box=0, /top, /right, charsize=1.6, thick=[4]
-	if utimes[tindex] ge anytim('2019-03-20T11:32:17', /utim) then stop
+		wait, 0.1
+	;	if utimes[tindex] ge anytim('2019-03-20T11:32:17', /utim) then stop
 	endfor
 stop
 END

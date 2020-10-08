@@ -1,7 +1,6 @@
 pro compute_all_psds, data, utimes, freq, $
 	sindices=sindices, stimes=stimes, pfreqs=pfreqs, powers=powers, $
-	pspecerr=pspecerr, sigcuts=sigcuts, ntsteps=ntsteps, psdsmooth=psdsmooth, pvalcutoff=pvalcutoff
-
+	pspecerr=pspecerr, sigcuts=sigcuts, psdsmooth=psdsmooth, pvalcutoff=pvalcutoff, component=component
 
 	
 	;-----------------------------------------;
@@ -9,7 +8,7 @@ pro compute_all_psds, data, utimes, freq, $
         ;       in f, but unevenly in space.
         ;       This gets an even sample in space
         ;       by interpolation.
-        npoints=((freq*1e6/1.)/8980.0)^2.0
+        npoints=((freq*1e6/component)/8980.0)^2.0
         rads = density_to_radius(npoints, model='newkirk')
         even_rads = interpol([rads[0], rads[-1]], n_elements(freq))
         nt=n_elements(data[*,0])-1
@@ -23,8 +22,8 @@ pro compute_all_psds, data, utimes, freq, $
         pspecerr = 0.05
 
         wavenum0 = 1.0+alog10(2.0*!pi)
-        wavenum1 = 2.5+alog10(2.0*!pi)
-        for i=0, nt, ntsteps do begin
+        wavenum1 = 3.0	;2.5+alog10(2.0*!pi)
+        for i=0, nt do begin
                 prof = data[i, *]
                 even_prof = interpol(prof, rads, even_rads)
                 even_prof = even_prof/max(even_prof)
@@ -85,6 +84,4 @@ pro compute_all_psds, data, utimes, freq, $
                 endif
         endfor
 			
-
-
 END

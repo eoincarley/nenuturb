@@ -6,8 +6,8 @@ function plot_all_psd, pfreqs, powers, times, powrange=powrange
         ntimes = n_elements(powers[0,*])
         colors = interpol([0,255], ntimes)
        
-       	wavenum0=1.0+alog10(2.0*!pi)
-	wavenum1=2.5+alog10(2.0*!pi)	
+       	wavenum0 = 1.0+alog10(2.0*!pi)
+	wavenum1 = 3.0 ;2.5+alog10(2.0*!pi)	
 	loadct, 0
         plot, 10^[wavenum0, wavenum1], 10^powrange, xr=10^[wavenum0, wavenum1], /nodata, yr=10^powrange, $
 		/xs, /ys, ytitle='PSD', /ylog, /xlog, $
