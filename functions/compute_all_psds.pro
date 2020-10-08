@@ -1,5 +1,5 @@
 pro compute_all_psds, data, utimes, freq, $
-	sindices=sindices, stimes=stimes, pfreqs=pfreqs, powers=powers, $
+	sindices=sindices, stimes=stimes, pfreqs=pfreqs, powers=powers, plot_ipsd=plot_ipsd,  $
 	pspecerr=pspecerr, sigcuts=sigcuts, psdsmooth=psdsmooth, pvalcutoff=pvalcutoff, component=component
 
 	
@@ -51,7 +51,7 @@ pro compute_all_psds, data, utimes, freq, $
                 pfsim = interpol([pfreq[0], pfreq[-1]], 100)
                 powsim = result[0] + result[1]*pfsim
 
-		if pvalue gt pvalcutoff and result[1] lt -1.0 then begin
+		if pvalue gt pvalcutoff then begin
 
                         if keyword_set(plot_ipsd) then begin
                         plot, pfreq, power, /xs, /ys, ytitle='log!L10!N(PSD Rs!U-1!N)', $

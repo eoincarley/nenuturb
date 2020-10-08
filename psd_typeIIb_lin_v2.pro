@@ -103,24 +103,7 @@ pro psd_typeIIb_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		window, xs=800, ys=1200
 	endelse	
 
-	;data = 10.0*alog10(data)
-	;data = constbacksub(data, /auto)
-	;data = smooth(data,3)
-
-	if keyword_set(rebin) then begin	
-		nfbin = (size(data))[2]
-		data = data[0:11999, *]
-		utimes = utimes[0:11999]
-		tbin = 3000
-		data = rebin(data, tbin, nfbin)
-		utimes = congrid(utimes, tbin)
-		ntsteps=1
-	endif else begin
-		ntsteps=10
-	endelse	
-
-
-	data = apply_response(data, freq)
+	;data = apply_response(data, freq)
 	;stop
 	;------------------------------------------;
 	;	Empty template to get black ticks
