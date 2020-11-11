@@ -42,7 +42,7 @@ pro plot_spectro, data, time, freq, f0, f1, posit
 
 END
 
-pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
+pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
 
 	; PSD of first type II. Code working.
 
@@ -56,8 +56,8 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	
 	t0 = 33.2
         t1 = 34.0
-        f0 = 33.0
-        f1 = 45.0
+        f0 = 21.0
+        f1 = 26.0
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 	   
 
@@ -65,7 +65,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 		setup_ps, './eps/nfar_PSD_lin_backg.eps', xsize=10, ysize=14
 	endif else begin
 		!p.charsize=1.8
-		window, xs=1600, ys=600
+		window, xs=1400, ys=600
 	endelse	
 
 	posit=[0.05, 0.15, 0.42, 0.9]
@@ -80,8 +80,8 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	;
 	;loadct, 0
 	;cursor, tpoint, fpoint, /data
-	;save, tpoint, fpoint, filename='herringbone_tfpoint_H.sav'
-	restore, 'herringbone_tfpoint_H.sav'
+	;save, tpoint, fpoint, filename='herringbone_tfpoint_F.sav'
+	restore, 'herringbone_tfpoint_F.sav'
 
 	findex = (where(freq le fpoint))[0]
 	tindex = (where(utimes ge tpoint))[0]
@@ -103,7 +103,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 
 	iburst = data[itpeak, findex]
 	fburst = freq[findex]
-	while freq[findex] gt 34.0 do begin	
+	while freq[findex] gt 21.0 do begin	
 		it0 = itpeak-tpix
         	it1 = itpeak+tpix
 		iprof = data[it0:it1, findex]
@@ -153,7 +153,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
         axis, xaxis=1, xr = [even_rads[0], even_rads[-1]]*rsunMm, /xs, xtitle='(Mm)'
 
         power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$
-                /tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)
+                /tukey, width=0.002, sig_level=0.01, SIGNIFICANCE=signif)
 
         pfreq = alog10(pfreq*2.0*!pi) ; x 2pi to get wavenumber from 1/lambda
 	power = alog10(power)
@@ -174,7 +174,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 
 	set_line_color
     	plot, 10^pfreq, 10^power, /xlog, /ylog, /xs, /ys, ytitle='PSD', $
-            xtitle=' ', thick=2, xr = [10^wavenum0, 10^wavenum1], yr=10^[-8, -2], $
+            xtitle=' ', thick=2, xr = [10^wavenum0, 10^wavenum1], yr=10^[-8.0, -2.0], $
 	        /noerase, position=[0.76, 0.15, 0.96, 0.9], psym=10, $
             XTICKFORMAT="(A1)", xticklen=1e-10, /normal
 

@@ -28,7 +28,7 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 
 
    	READ_NU_SPEC, file, data,time,freq,beam,ndata,nt,dt,nf,df,ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=1, ntimes=3;, fclean=6
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=1, ntimes=8;, fclean=6
         utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
         freq = reverse(freq)
@@ -93,7 +93,7 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 	;------------------------------------------;
 	;	Empty template to get black ticks
 	;
-	posit=[0.08, 0.15, 0.28, 0.9]
+	posit=[0.06, 0.15, 0.29, 0.9]
 	loadct, 0
         utplot, utimes, freq, yr=[f1,f0], /xs, /ys, xtitle='Time (UT)', ytitle='Frequency (MHz)', $
 		title='NenuFAR-ES11 '+time2file(utimes[0], /date), pos=posit, /normal, color=150, $
@@ -126,7 +126,7 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 	loadct, 0
 	pspecerr = 0.05
 	wavenum0 = 1.0+alog10(2.0*!pi)
-        wavenum1 = 2.5+alog10(2.0*!pi)
+        wavenum1 =3.0 ;2.5+alog10(2.0*!pi)
         rsunMm = 696.34 ; Mm
 
 	;----------------------------------------;
@@ -141,14 +141,14 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 	even_prof = interpol(prof, rads, even_rads)
 	even_prof = even_prof/max(even_prof)	
 
-        plot, even_rads, even_prof, /xs, /ys, pos=[0.37, 0.15, 0.68, 0.9], /normal, /noerase, $
+        plot, even_rads, even_prof, /xs, /ys, pos=[0.36, 0.15, 0.66, 0.9], /normal, /noerase, $
                 xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=1e-10
 
 	axis, xaxis=0, xr = [even_rads[0], even_rads[-1]], /xs, xtitle='Heliocentric distance (R!Ls!N)'
 	axis, xaxis=1, xr = [even_rads[0], even_rads[-1]]*rsunMm, /xs, xtitle='(Mm)'
 
 	power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$ 
-		/tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)
+		/tukey, width=0.0011, sig_level=0.01, SIGNIFICANCE=signif)
 	
 	pfreq = alog10(pfreq*2.0*!pi)
 	power = alog10(power)
@@ -175,7 +175,7 @@ pro psd_typeIIc_example, save=save, plot_ipsd=plot_ipsd, postscript=postscript, 
 			
 	plot, 10^pfreq, 10^power, /xlog, /ylog, /xs, /ys, ytitle='PSD', $
 		xtitle=' ', thick=2, $
-		yr=10^[-6, -2], /noerase, position=[0.75, 0.15, 0.99, 0.9], psym=10, $
+		yr=10^[-6, -2], /noerase, position=[0.73, 0.15, 0.98, 0.9], psym=10, $
 		XTICKFORMAT="(A1)", xticklen=1e-10
                 	
 	axis, xaxis=0, xr = [10.0^wavenum0, 10.0^wavenum1], /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'
