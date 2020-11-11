@@ -2,7 +2,7 @@ pro setup_ps, name, xsize=xsize, ysize=ysize
   
    set_plot,'ps'
    !p.font=0
-   !p.charsize=1.5
+   !p.charsize=1.1
    device, filename = name, $
           /color, $
           /helvetica, $
@@ -17,7 +17,7 @@ end
 
 pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
    	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=1, ntimes=8
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=8
         
 	utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
@@ -33,11 +33,11 @@ pro plot_spectro, data, time, freq, f0, f1, posit
 	;------------------------------------------;
         ;            Plot spectrogram
         ;
-        loadct, 74
-        reverse_ct
-        spectro_plot, sigrange(data), time, freq, /xs, /ys, $
-                ytitle=' ', xtitle=' ', yr=[f1, f0], /noerase, XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", $
-                position=posit, /normal, xr=[time[0], time[-1]]
+        ;loadct, 74
+        ;reverse_ct
+        ;spectro_plot, sigrange(data), time, freq, /xs, /ys, $
+        ;        ytitle=' ', xtitle=' ', yr=[f1, f0], /noerase, XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", $
+        ;        position=posit, /normal, xr=[time[0], time[-1]]
 
 
 END
@@ -63,7 +63,7 @@ pro psd_typeIII_forest_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscr
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/nfar_PSD_lin_backg.eps', xsize=10, ysize=14
+		setup_ps, './eps/newfig.eps', xsize=12, ysize=5
 	endif else begin
 		!p.charsize=1.8
 		window, xs=1400, ys=600
@@ -74,14 +74,18 @@ pro psd_typeIII_forest_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscr
 	;	     Plot spectrogram
 	;
         plot_spectro, data, utimes, freq, f0, f1, posit
-	
+
 	;------------------------------------------;
 	;
 	;	Extract profile along drift
 	;
 	loadct, 0
-	cursor, tpoint, fpoint, /data
+	;cursor, tpoint, fpoint, /data
+	;save, tpoint, fpoint, filename='forest_tfpoint.sav'
+	restore, 'forest_tfpoint.sav', /verb	
+	save, data, utimes, freq, tpoint, fpoint, filename='forest_drift_data.sav'
 	
+
 	findex = (where(freq le fpoint))[0]
 	tindex = (where(utimes ge tpoint))[0]
 
@@ -90,19 +94,16 @@ pro psd_typeIII_forest_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscr
 	it1 = tindex+tpix
 	iprof = data[it0:it1, findex]
 	utprof = utimes[it0:it1]
-       	;window, 1, xs=500, ys=500
-	;utplot, utprof, iprof, tickunit=10.0
 
 	itpeak = where(iprof eq max(iprof)) + it0
 	
-	;wset, 0
-	;plot_spectro, data, utimes, freq, f0, f1, posit
-	loadct, 0
-	plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=2, color=0	
+	;loadct, 0
+	;plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=2, color=0	
+
 
 	iburst = data[itpeak, findex]
 	fburst = freq[findex]
-	while freq[findex] gt 38.0 do begin	
+	while freq[findex] gt 39.6 do begin	
 		it0 = itpeak-tpix
         	it1 = itpeak+tpix
 		iprof = data[it0:it1, findex]
@@ -129,11 +130,11 @@ pro psd_typeIII_forest_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscr
         npoints=((freq*1e6/1.)/8980.0)^2.0
         rads = density_to_radius(npoints, model='newkirk')
         even_rads = interpol([rads[0], rads[-1]], n_elements(freq))
-        nt=n_elements(data[*,0])-1
+        nt = n_elements(data[*,0])-1
         def = even_rads[2]-even_rads[1]
         pspecerr = 0.05
 	wavenum0 = 1.0+alog10(2.0*!pi)
-        wavenum1 = 2.5+alog10(2.0*!pi)
+        wavenum1 = 3.0+alog10(2.0*!pi)
 	rsunMm = 696.34 ; Mm
 
 
@@ -152,7 +153,7 @@ pro psd_typeIII_forest_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscr
         axis, xaxis=1, xr = [even_rads[0], even_rads[-1]]*rsunMm, /xs, xtitle='(Mm)'
 
         power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$
-                /tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)
+                /tukey, width=0.001, sig_level=0.05, SIGNIFICANCE=signif)
 
         pfreq = alog10(pfreq*2.0*!pi) ; x 2pi to get wavenumber from 1/lambda
 	power = alog10(power)
@@ -178,7 +179,7 @@ pro psd_typeIII_forest_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscr
 	rsusMm = 696.34 ; Mm
 
         plot, 10^pfreq, 10^power, /xlog, /ylog, /xs, /ys, ytitle='PSD', $
-                xtitle=' ', thick=2, xr = [10.0^wavenum0, 10.0^wavenum1], yr=10^[-6.0, -2.0], $
+                xtitle=' ', thick=2, xr = [10.0^wavenum0, 10.0^wavenum1], yr=10^[-7.0, -2.0], $
 		/noerase, position=[0.75, 0.15, 0.99, 0.9], psym=10, $
                 XTICKFORMAT="(A1)", xticklen=1e-10
 
@@ -209,10 +210,10 @@ pro psd_typeIII_forest_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscr
 
         ;xyouts, 0.79, 0.85, 'c', charthick=4, /normal
 	
+	if keyword_set(postscript) then device, /close
+	set_plot, 'x'	
 	
 	
 	
-	
-	
-stop	
+stop
 END
