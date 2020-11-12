@@ -123,7 +123,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 		iprof = data[it0:it1, findex]
         	utprof = utimes[it0:it1]
         	itpeak = where(iprof eq max(iprof)) + it0
-		plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=0.1, color=5
+		plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=0.5, color=5
 
 		isample = data[itpeak, findex]
 		iburst = [iburst, isample]
@@ -165,7 +165,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
         even_prof = even_prof/max(even_prof)
 
         plot, even_rads, even_prof, /xs, /ys, pos=[0.48, 0.15, 0.7, 0.9], /normal, /noerase, $
-                xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=1e-10
+                xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=1e-10, thick=3
 
 
         axis, xaxis=0, xr = [even_rads[0], even_rads[-1]], /xs, xtitle='Heliocentric distance (R!Ls!N)'
@@ -193,14 +193,14 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 
 	set_line_color
     	plot, 10^pfreq, 10^power, /xlog, /ylog, /xs, /ys, ytitle='PSD', $
-            xtitle=' ', thick=2, xr = [10^wavenum0, 10^wavenum1], yr=10^[-8.0, -2.0], $
+            xtitle=' ', thick=2, xr = 10.0^[wavenum0, wavenum1], yr=10^[-8.0, -2.0], $
 	        /noerase, position=[0.76, 0.15, 0.96, 0.9], psym=10, $
             XTICKFORMAT="(A1)", xticklen=1e-10, /normal
 
 	;----------------------------;
         ;    Plor 5/3 and 7/3 PSDs.
         ;
-        powturb = result[0]-0.35 + (-5/3.)*pfsim
+        powturb = result[0]-0.49 + (-5/3.)*pfsim
         oplot, 10^pfsim, 10^powturb, linestyle=5, color=7, thick=8
         oplot, 10^pfsim, 10^powsim, color=5, thick=4
 
