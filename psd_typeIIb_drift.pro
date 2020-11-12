@@ -27,7 +27,7 @@ end
 pro plot_spectro, data, time, freq, f0, f1, posit
 
 	loadct, 0
-        utplot, time, freq, yr=[f1,f0], /xs, /ys, xtitle=' ', ytitle='Frequency (MHz)', $
+        utplot, time, freq, yr=[f1,f0], /xs, /ys, xtitle='Time (UT)', ytitle='Frequency (MHz)', $
                 title='NenuFAR-ES11 '+time2file(time[0], /date), pos=posit, /normal, color=150, $
                 xr=[time[0], time[-1]]
 	;------------------------------------------;
