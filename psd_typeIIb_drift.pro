@@ -135,7 +135,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
         ;       in f, but unevenly in space.
         ;       This gets an even sample in space
         ;       by interpolation.
-        npoints=((freq*1e6/1.)/8980.0)^2.0
+        npoints=((freq*1e6/2.)/8980.0)^2.0
         rads = density_to_radius(npoints, model='newkirk')
         even_rads = interpol([rads[0], rads[-1]], n_elements(freq))
         nt=n_elements(data[*,0])-1
@@ -189,7 +189,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	;----------------------------;
         ;    Plor 5/3 and 7/3 PSDs.
         ;
-        powturb = result[0]-0.25 + (-5/3.)*pfsim
+        powturb = result[0]-0.0 + (-5/3.)*pfsim
         oplot, 10^pfsim, 10^powturb, linestyle=5, color=7, thick=8
 	oplot, 10^pfsim, 10^powsim, color=5, thick=4
 
