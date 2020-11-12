@@ -62,7 +62,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/psd_hbone_drift_F.eps', xsize=16, ysize=16
+		setup_ps, './eps/psd_hbone_drift_F.eps', xsize=16, ysize=6
 	endif else begin
 		!p.charsize=1.8
 		window, 1, xs=1600, ys=600
