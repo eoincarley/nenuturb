@@ -48,7 +48,9 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 
 	; This version of the code excludes certain powerlaw fits based on their p-value.
 
-	; The version with drift extracts an intensity profile along a drifting structure within the radio burst. More appropriate when structures actually drift in frequency time.
+	; The version with drift extracts an intensity profile along a drifting structure within the radio burst. 
+	
+	; More appropriate when structures actually drift in frequency time.
 
 	path = '/databf2/nenufar-tf/ES11/2019/03/20190320_104900_20190320_125000_SUN_TRACKING_BHR/'
         file = 'SUN_TRACKING_20190320_104936_0.spectra'
@@ -56,13 +58,13 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	
 	t0 = 33.2
         t1 = 34.0
-        f0 = 33.0
-        f1 = 45.0
+        f0 = 32.0
+        f1 = 50.0
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/nfar_PSD_lin_backg.eps', xsize=10, ysize=14
+		setup_ps, './eps/psd_hbone_drift_H.eps', xsize=16, ysize=6
 	endif else begin
 		!p.charsize=1.8
 		window, xs=1600, ys=600
@@ -73,7 +75,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	;	     Plot spectrogram
 	;
         plot_spectro, data, utimes, freq, f0, f1, posit
-	
+
 	;------------------------------------------;
 	;
 	;	Extract profile along drift
@@ -82,11 +84,14 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	;cursor, tpoint, fpoint, /data
 	;save, tpoint, fpoint, filename='herringbone_tfpoint_H.sav'
 	restore, 'herringbone_tfpoint_H.sav'
+	hdata = data
+	hfreq = freq
+	save, hdata, hfreq, filename='hbone_map_H.sav'
 
 	findex = (where(freq le fpoint))[0]
 	tindex = (where(utimes ge tpoint))[0]
 
-	tpix = 7.0
+	tpix = 7.0 ; Search for peak in the next f channel at +/- 7 pix of peak in previous channel.
 	it0 = tindex-tpix
 	it1 = tindex+tpix
 	iprof = data[it0:it1, findex]
@@ -96,9 +101,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 
 	itpeak = where(iprof eq max(iprof)) + it0
 	
-	;wset, 0
-	;plot_spectro, data, utimes, freq, f0, f1, posit
-	loadct, 0
+	set_line_color
 	plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=2, color=0	
 
 	iburst = data[itpeak, findex]
@@ -109,13 +112,18 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 		iprof = data[it0:it1, findex]
         	utprof = utimes[it0:it1]
         	itpeak = where(iprof eq max(iprof)) + it0
-		plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=0.1, color=0
+		plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=0.1, color=5
 
 		isample = data[itpeak, findex]
 		iburst = [iburst, isample]
 		fburst = [fburst, freq[findex]]
 		findex=findex+1
 	endwhile
+
+	set_line_color
+        contour, alog10(smooth(data, 10)), levels=[7.55], position=posit, /noerase, $
+                XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", xticklen=-1e-8, yticklen=-1e-8, thick=3,  color=0, /xs, /ys
+
 
 	freq = fburst
 	prof = iburst
@@ -137,7 +145,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
         wavenum1 = 3.5+alog10(2.0*!pi)
 	rsunMm = 696.34 ; Mm
 
-
+	loadct, 0
         ;----------------------------------------------;
         ;
 	;  Get evenly sampled in space and perform PSD
@@ -174,9 +182,16 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 
 	set_line_color
     	plot, 10^pfreq, 10^power, /xlog, /ylog, /xs, /ys, ytitle='PSD', $
-            xtitle=' ', thick=2, xr = [10^wavenum0, 10^wavenum1], yr=10^[-8, -2], $
+            xtitle=' ', thick=2, xr = [10^wavenum0, 10^wavenum1], yr=10.0^[-7.0, -2.0], $
 	        /noerase, position=[0.76, 0.15, 0.96, 0.9], psym=10, $
             XTICKFORMAT="(A1)", xticklen=1e-10, /normal
+
+	;----------------------------;
+        ;    Plor 5/3 and 7/3 PSDs.
+        ;
+        powturb = result[0]-0.25 + (-5/3.)*pfsim
+        oplot, 10^pfsim, 10^powturb, linestyle=5, color=7, thick=8
+	oplot, 10^pfsim, 10^powsim, color=5, thick=4
 
     	;----------------------------;
     	;
@@ -184,7 +199,6 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
     	;
     	meansig = 10^sigcutoff
     	print, '99% confidence thresh: '+string(meansig)
-    	oplot, 10^pfsim, 10^powsim, color=5, thick=4
     	oplot, [10^wavenum0, 10^wavenum1], [meansig, meansig], linestyle=5, color=0
 
     	;xerr = dblarr(n_elements(pfreq))
@@ -192,9 +206,9 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
     	;oploterror, pfreq, power, xerr, yerr
 
     	sindfit = string(round(result[1]*100.0)/100., format='(f6.2)')
-    	;alpha = cgsymbol('alpha')
-    	legend,[' :'+sindfit], linestyle=[0], color=[5], $
-            box=0, /top, /right, thick=[4]
+    	alpha = cgsymbol('alpha')
+    	legend,[alpha+':'+sindfit, alpha+'!L5/3!N'], linestyle=[0, 5], color=[5, 7], $
+            box=0, /top, /right, thick=[4, 4]
 
     	axis, xaxis=0, xr = [10.0^wavenum0, 10.0^wavenum1], /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'
     	axis, xaxis=1, xr = [10.0^wavenum0/rsunMm, 10^wavenum1/rsunMm], /xlog, /xs, xtitle='(Mm!U-1!N)'

@@ -57,15 +57,15 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	t0 = 33.2
         t1 = 34.0
         f0 = 21.0
-        f1 = 26.0
+        f1 = 25.0
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/nfar_PSD_lin_backg.eps', xsize=10, ysize=14
+		setup_ps, './eps/nfar_PSD_lin_backg.eps', xsize=16, ysize=16
 	endif else begin
 		!p.charsize=1.8
-		window, xs=1400, ys=600
+		window, 1, xs=1600, ys=600
 	endelse	
 
 	posit=[0.05, 0.15, 0.42, 0.9]
@@ -73,6 +73,18 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	;	     Plot spectrogram
 	;
         plot_spectro, data, utimes, freq, f0, f1, posit
+
+	;------------------------------------------;
+	;	Plot harmonic contour map. Plot below because I need f-t image coords for while loop plot below.
+	;
+	restore, 'hbone_map_H.sav'
+	hdata = reverse(hdata, 2)  
+	hfreq = reverse(hfreq)     
+	hf0 = (where(hfreq ge f0*2.0))[0]
+	hf1 = (where(hfreq ge f1*2.0))[0]
+	hdatac = reverse(hdata[*, hf0:hf1], 2)
+	zeros = fltarr((size(hdatac))[1], (size(hdatac))[2])
+	fdatac = [[zeros], [hdatac]]
 	
 	;------------------------------------------;
 	;
@@ -98,9 +110,11 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	
 	;wset, 0
 	;plot_spectro, data, utimes, freq, f0, f1, posit
-	loadct, 0
-	plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=2, color=0	
+	;loadct, 0
+	;plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=2, color=0	
 
+
+	set_line_color
 	iburst = data[itpeak, findex]
 	fburst = freq[findex]
 	while freq[findex] gt 21.0 do begin	
@@ -109,13 +123,18 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 		iprof = data[it0:it1, findex]
         	utprof = utimes[it0:it1]
         	itpeak = where(iprof eq max(iprof)) + it0
-		plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=0.1, color=0
+		plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=0.1, color=5
 
 		isample = data[itpeak, findex]
 		iburst = [iburst, isample]
 		fburst = [fburst, freq[findex]]
 		findex=findex+1
 	endwhile
+	
+	loadct, 0
+        contour, alog10(smooth(hdatac, 10)), levels=[7.55], position=posit, /noerase, $
+                XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", xticklen=-1e-8, yticklen=-1e-8, thick=3,  color=0, /xs, /ys
+
 
 	freq = fburst
 	prof = iburst
@@ -178,29 +197,34 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	        /noerase, position=[0.76, 0.15, 0.96, 0.9], psym=10, $
             XTICKFORMAT="(A1)", xticklen=1e-10, /normal
 
-    	;----------------------------;
-    	;
-    	;    Plot 99% confidence
-    	;
-    	meansig = 10^sigcutoff
-    	print, '99% confidence thresh: '+string(meansig)
-    	oplot, 10^pfsim, 10^powsim, color=5, thick=4
-    	oplot, [10^wavenum0, 10^wavenum1], [meansig, meansig], linestyle=5, color=0
+	;----------------------------;
+        ;    Plor 5/3 and 7/3 PSDs.
+        ;
+        powturb = result[0]-0.35 + (-5/3.)*pfsim
+        oplot, 10^pfsim, 10^powturb, linestyle=5, color=7, thick=8
+        oplot, 10^pfsim, 10^powsim, color=5, thick=4
 
-    	;xerr = dblarr(n_elements(pfreq))
-    	;yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
-    	;oploterror, pfreq, power, xerr, yerr
+        ;----------------------------;
+        ;
+        ;    Plot 99% confidence
+        ;
+        meansig = 10^sigcutoff
+        print, '99% confidence thresh: '+string(meansig)
+        oplot, [10^wavenum0, 10^wavenum1], [meansig, meansig], linestyle=5, color=0
 
-    	sindfit = string(round(result[1]*100.0)/100., format='(f6.2)')
-    	;alpha = cgsymbol('alpha')
-    	legend,[' :'+sindfit], linestyle=[0], color=[5], $
-            box=0, /top, /right, thick=[4]
+        ;xerr = dblarr(n_elements(pfreq))
+        ;yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
+        ;oploterror, pfreq, power, xerr, yerr
 
-    	axis, xaxis=0, xr = [10.0^wavenum0, 10.0^wavenum1], /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'
-    	axis, xaxis=1, xr = [10.0^wavenum0/rsunMm, 10^wavenum1/rsunMm], /xlog, /xs, xtitle='(Mm!U-1!N)'
+        sindfit = string(round(result[1]*100.0)/100., format='(f6.2)')
+        alpha = cgsymbol('alpha')
+        legend,[alpha+':'+sindfit, alpha+'!L5/3!N'], linestyle=[0, 5], color=[5, 7], $
+            box=0, /top, /right, thick=[4, 4]
 
-    	if keyword_set(postscript) then device, /close
-    	;set_plot, 'x'   	
-	
+        axis, xaxis=0, xr = [10.0^wavenum0, 10.0^wavenum1], /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'
+        axis, xaxis=1, xr = [10.0^wavenum0/rsunMm, 10^wavenum1/rsunMm], /xlog, /xs, xtitle='(Mm!U-1!N)'
+
+        if keyword_set(postscript) then device, /close
+
 stop	
 END
