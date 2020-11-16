@@ -59,15 +59,15 @@ pro plot_goes_20190320, t1, t2, position=position, download=download, tlines=tli
         plots, times, 1e-7, linestyle=2
         plots, times, 1e-6, linestyle=2
 
-        outplot, anytim([tlines[0], tlines[0]], /cc), yrange, linestyle=5, thick=3
-        outplot, anytim([tlines[1], tlines[1]], /cc), yrange, linestyle=5, thick=3
+        outplot, anytim([tlines[0], tlines[0]], /cc), yrange, linestyle=0, thick=2
+        outplot, anytim([tlines[1], tlines[1]], /cc), yrange, linestyle=0, thick=2
         ;outplot, anytim([tlines[2], tlines[2]], /cc), yrange, linestyle=0, thick=3
 
 	
 	; Plot vertical lines at times of images
-	outplot, anytim([imgtims[0], imgtims[0]], /cc), yrange, linestyle=0, thick=1
-        outplot, anytim([imgtims[1], imgtims[1]], /cc), yrange, linestyle=0, thick=1
-        outplot, anytim([imgtims[2], imgtims[2]], /cc), yrange, linestyle=0, thick=1
+	outplot, anytim([imgtims[0], imgtims[0]], /cc), yrange, linestyle=1, thick=0.5
+        outplot, anytim([imgtims[1], imgtims[1]], /cc), yrange, linestyle=1, thick=0.5
+        outplot, anytim([imgtims[2], imgtims[2]], /cc), yrange, linestyle=1, thick=0.5
 
 
 
@@ -107,9 +107,9 @@ pro plot_nfar, data, utimes, freq, scl=scl, pos=pos, imgtims=imgtims
 
 	yrange = [60.0, 20.0]
 	; Plot vertical lines at times of images
-        outplot, anytim([imgtims[0], imgtims[0]], /cc), yrange, linestyle=0, thick=2
-        outplot, anytim([imgtims[1], imgtims[1]], /cc), yrange, linestyle=0, thick=2
-        outplot, anytim([imgtims[2], imgtims[2]], /cc), yrange, linestyle=0, thick=2
+        outplot, anytim([imgtims[0], imgtims[0]], /cc), yrange, linestyle=1, thick=1
+        outplot, anytim([imgtims[1], imgtims[1]], /cc), yrange, linestyle=1, thick=1
+        outplot, anytim([imgtims[2], imgtims[2]], /cc), yrange, linestyle=1, thick=1
 
 
 	data = cgScaleVector(Findgen(101), 100, 1000)
@@ -143,7 +143,7 @@ pro plot_goes_nenufar_v2, save=save, postscript=postscript
 	; 	First spectrogram
 	;
 	READ_NU_SPEC, path+file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
-		ntimes=10, tmin=29*60.0, tmax=45*60.0, fflat=3
+		ntimes=10, tmin=28.0*60.0, tmax=44.0*60.0, fflat=3
         utimes0=anytim(file2time(file), /utim) + time
 	
 	plot_nfar, data, utimes0,  freq, scl=[4.5e5, 5e7], pos=[0.2, 0.45, 0.85, 0.7], imgtims=imgtims
