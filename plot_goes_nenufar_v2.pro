@@ -102,7 +102,7 @@ pro plot_nfar, data, utimes, freq, scl=scl, pos=pos
    	nticks = N_Elements(ticks)
 	set_line_color
    	cgPlot, data, /YLOG, YRANGE=[60,20], YTICKS=nticks-1, $
-      		YTICKV=Reverse(ticks), ticklen=-5e-3,  pos=pos,  color=200, AXESCOLOR=1, /noerase, XTICKFORMAT="(A1)", ytitle='Frequency (MHz)' 
+      		YTICKV=Reverse(ticks), ticklen=-5e-3,  pos=pos, color=0, AXESCOLOR=0, /noerase, XTICKFORMAT="(A1)", ytitle='Frequency (MHz)' 
 
 end
 
@@ -118,6 +118,9 @@ pro plot_goes_nenufar_v2, save=save, postscript=postscript
 	if keyword_set(postscript) then begin
                 setup_ps, './eps/nfar_goes_20190320.eps'
         endif else begin
+		loadct, 0
+		!p.color=0
+		!p.background=100
                 window, xs=1200, ys=700
         endelse 
 

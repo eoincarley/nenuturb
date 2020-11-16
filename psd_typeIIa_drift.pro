@@ -62,7 +62,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/psd_hbone_drift_F.eps', xsize=16, ysize=6
+		setup_ps, './eps/psd_hbone_drift_F.eps', xsize=17, ysize=5.5
 	endif else begin
 		!p.charsize=1.8
 		window, 1, xs=1600, ys=600
@@ -193,7 +193,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 
 	set_line_color
     	plot, 10^pfreq, 10^power, /xlog, /ylog, /xs, /ys, ytitle='PSD', $
-            xtitle=' ', thick=2, xr = 10.0^[wavenum0, wavenum1], yr=10^[-8.0, -2.0], $
+            xtitle=' ', thick=2, xr = 10.0^[wavenum0, wavenum1], yr=10^[-7.0, -2.0], $
 	        /noerase, position=[0.76, 0.15, 0.96, 0.9], psym=10, $
             XTICKFORMAT="(A1)", xticklen=1e-10, /normal
 
