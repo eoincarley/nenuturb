@@ -28,7 +28,7 @@ pro plot_spectro, data, time, freq, f0, f1, posit
 
 	loadct, 0
         utplot, time, freq, yr=[f1,f0], /xs, /ys, xtitle='Time (UT)', ytitle='Frequency (MHz)', $
-                title='NenuFAR-ES11 '+time2file(time[0], /date), pos=posit, /normal, color=150, $
+                title=' ', pos=posit, /normal, color=150, $
                 xr=[time[0], time[-1]]
 	;------------------------------------------;
         ;            Plot spectrogram
@@ -64,7 +64,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/psd_hbone_drift_H.eps', xsize=17, ysize=5.5
+		setup_ps, './eps/psd_hbone_drift_H.eps', xsize=18, ysize=5.5
 	endif else begin
 		!p.charsize=1.8
 		window, xs=1600, ys=600
@@ -154,11 +154,12 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
         even_prof = even_prof/max(even_prof)
 
         plot, even_rads, even_prof, /xs, /ys, pos=[0.48, 0.15, 0.7, 0.9], /normal, /noerase, $
-                xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=1e-10
+                xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=-1e-8
 
 
         axis, xaxis=0, xr = [even_rads[0], even_rads[-1]], /xs, xtitle='Heliocentric distance (R!Ls!N)'
         axis, xaxis=1, xr = [even_rads[0], even_rads[-1]]*rsunMm, /xs, xtitle='(Mm)'
+	stop
 
         power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$
                 /tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)

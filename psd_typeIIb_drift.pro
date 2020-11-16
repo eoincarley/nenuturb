@@ -28,7 +28,7 @@ pro plot_spectro, data, time, freq, f0, f1, posit
 
 	loadct, 0
         utplot, time, freq, yr=[f1,f0], /xs, /ys, xtitle='Time (UT)', ytitle='Frequency (MHz)', $
-                title='NenuFAR-ES11 '+time2file(time[0], /date), pos=posit, /normal, color=150, $
+                title=' ', pos=posit, /normal, color=150, $
                 xr=[time[0], time[-1]]
 	;------------------------------------------;
         ;            Plot spectrogram
@@ -62,7 +62,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/psd_hbone_drift_F.eps', xsize=17, ysize=5.5
+		setup_ps, './eps/psd_hbone_drift_F.eps', xsize=18, ysize=5.5
 	endif else begin
 		!p.charsize=1.8
 		window, 1, xs=1600, ys=600
