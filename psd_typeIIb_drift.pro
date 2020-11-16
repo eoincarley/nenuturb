@@ -48,9 +48,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 
 	; This version of the code excludes certain powerlaw fits based on their p-value.
 
-	; The version with drift extracts an intensity profile along a drifting structure within the radio burst. 
-	
-	; More appropriate when structures actually drift in frequency time.
+	; The version with drift extracts an intensity profile along a drifting structure within the radio burst. More appropriate when structures actually drift in frequency time.
 
 	path = '/databf2/nenufar-tf/ES11/2019/03/20190320_104900_20190320_125000_SUN_TRACKING_BHR/'
         file = 'SUN_TRACKING_20190320_104936_0.spectra'
@@ -58,16 +56,16 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	
 	t0 = 33.2
         t1 = 34.0
-        f0 = 32.0
-        f1 = 50.0
+        f0 = 21.0
+        f1 = 25.0
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 	   
 
 	if keyword_set(postscript) then begin
-		setup_ps, './eps/psd_hbone_drift_H.eps', xsize=17, ysize=5.5
+		setup_ps, './eps/psd_hbone_drift_F.eps', xsize=17, ysize=5.5
 	endif else begin
 		!p.charsize=1.8
-		window, xs=1600, ys=600
+		window, 1, xs=1600, ys=600
 	endelse	
 
 	posit=[0.05, 0.15, 0.42, 0.9]
@@ -77,21 +75,30 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
         plot_spectro, data, utimes, freq, f0, f1, posit
 
 	;------------------------------------------;
+	;	Plot harmonic contour map. Plot below because I need f-t image coords for while loop plot below.
+	;
+	restore, 'hbone_map_H.sav'
+	hdata = reverse(hdata, 2)  
+	hfreq = reverse(hfreq)     
+	hf0 = (where(hfreq ge f0*2.0))[0]
+	hf1 = (where(hfreq ge f1*2.0))[0]
+	hdatac = reverse(hdata[*, hf0:hf1], 2)
+	zeros = fltarr((size(hdatac))[1], (size(hdatac))[2])
+	fdatac = [[zeros], [hdatac]]
+	
+	;------------------------------------------;
 	;
 	;	Extract profile along drift
 	;
 	;loadct, 0
 	;cursor, tpoint, fpoint, /data
-	;save, tpoint, fpoint, filename='herringbone_tfpoint_H.sav'
-	restore, 'herringbone_tfpoint_H.sav'
-	hdata = data
-	hfreq = freq
-	save, hdata, hfreq, filename='hbone_map_H.sav'
+	;save, tpoint, fpoint, filename='herringbone_tfpoint_F.sav'
+	restore, 'herringbone_tfpoint_F.sav'
 
 	findex = (where(freq le fpoint))[0]
 	tindex = (where(utimes ge tpoint))[0]
 
-	tpix = 7.0 ; Search for peak in the next f channel at +/- 7 pix of peak in previous channel.
+	tpix = 7.0
 	it0 = tindex-tpix
 	it1 = tindex+tpix
 	iprof = data[it0:it1, findex]
@@ -101,27 +108,31 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 
 	itpeak = where(iprof eq max(iprof)) + it0
 	
-	set_line_color
-	plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=2, color=0	
+	;wset, 0
+	;plot_spectro, data, utimes, freq, f0, f1, posit
+	;loadct, 0
+	;plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=2, color=0	
 
+
+	set_line_color
 	iburst = data[itpeak, findex]
 	fburst = freq[findex]
-	while freq[findex] gt 34.0 do begin	
+	while freq[findex] gt 21.0 do begin	
 		it0 = itpeak-tpix
         	it1 = itpeak+tpix
 		iprof = data[it0:it1, findex]
         	utprof = utimes[it0:it1]
         	itpeak = where(iprof eq max(iprof)) + it0
-		plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=0.1, color=5
+		plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=0.5, color=5
 
 		isample = data[itpeak, findex]
 		iburst = [iburst, isample]
 		fburst = [fburst, freq[findex]]
 		findex=findex+1
 	endwhile
-
-	set_line_color
-        contour, alog10(smooth(data, 10)), levels=[7.55], position=posit, /noerase, $
+	
+	loadct, 0
+        contour, alog10(smooth(hdatac, 10)), levels=[7.55], position=posit, /noerase, $
                 XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", xticklen=-1e-8, yticklen=-1e-8, thick=3,  color=0, /xs, /ys
 
 
@@ -135,7 +146,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
         ;       in f, but unevenly in space.
         ;       This gets an even sample in space
         ;       by interpolation.
-        npoints=((freq*1e6/2.)/8980.0)^2.0
+        npoints=((freq*1e6/1.)/8980.0)^2.0
         rads = density_to_radius(npoints, model='newkirk')
         even_rads = interpol([rads[0], rads[-1]], n_elements(freq))
         nt=n_elements(data[*,0])-1
@@ -145,7 +156,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
         wavenum1 = 3.5+alog10(2.0*!pi)
 	rsunMm = 696.34 ; Mm
 
-	loadct, 0
+
         ;----------------------------------------------;
         ;
 	;  Get evenly sampled in space and perform PSD
@@ -154,14 +165,14 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
         even_prof = even_prof/max(even_prof)
 
         plot, even_rads, even_prof, /xs, /ys, pos=[0.48, 0.15, 0.7, 0.9], /normal, /noerase, $
-                xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=1e-10
+                xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=1e-10, thick=3
 
 
         axis, xaxis=0, xr = [even_rads[0], even_rads[-1]], /xs, xtitle='Heliocentric distance (R!Ls!N)'
         axis, xaxis=1, xr = [even_rads[0], even_rads[-1]]*rsunMm, /xs, xtitle='(Mm)'
 
         power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$
-                /tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)
+                /tukey, width=0.002, sig_level=0.01, SIGNIFICANCE=signif)
 
         pfreq = alog10(pfreq*2.0*!pi) ; x 2pi to get wavenumber from 1/lambda
 	power = alog10(power)
@@ -182,39 +193,38 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 
 	set_line_color
     	plot, 10^pfreq, 10^power, /xlog, /ylog, /xs, /ys, ytitle='PSD', $
-            xtitle=' ', thick=2, xr = [10^wavenum0, 10^wavenum1], yr=10.0^[-7.0, -2.0], $
+            xtitle=' ', thick=2, xr = 10.0^[wavenum0, wavenum1], yr=10^[-7.0, -2.0], $
 	        /noerase, position=[0.76, 0.15, 0.96, 0.9], psym=10, $
             XTICKFORMAT="(A1)", xticklen=1e-10, /normal
 
 	;----------------------------;
         ;    Plor 5/3 and 7/3 PSDs.
         ;
-        powturb = result[0]-0.0 + (-5/3.)*pfsim
+        powturb = result[0]-0.49 + (-5/3.)*pfsim
         oplot, 10^pfsim, 10^powturb, linestyle=5, color=7, thick=8
-	oplot, 10^pfsim, 10^powsim, color=5, thick=4
+        oplot, 10^pfsim, 10^powsim, color=5, thick=4
 
-    	;----------------------------;
-    	;
-    	;    Plot 99% confidence
-    	;
-    	meansig = 10^sigcutoff
-    	print, '99% confidence thresh: '+string(meansig)
-    	oplot, [10^wavenum0, 10^wavenum1], [meansig, meansig], linestyle=5, color=0
+        ;----------------------------;
+        ;
+        ;    Plot 99% confidence
+        ;
+        meansig = 10^sigcutoff
+        print, '99% confidence thresh: '+string(meansig)
+        oplot, [10^wavenum0, 10^wavenum1], [meansig, meansig], linestyle=5, color=0
 
-    	;xerr = dblarr(n_elements(pfreq))
-    	;yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
-    	;oploterror, pfreq, power, xerr, yerr
+        ;xerr = dblarr(n_elements(pfreq))
+        ;yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
+        ;oploterror, pfreq, power, xerr, yerr
 
-    	sindfit = string(round(result[1]*100.0)/100., format='(f6.2)')
-    	alpha = cgsymbol('alpha')
-    	legend,[alpha+':'+sindfit, alpha+'!L5/3!N'], linestyle=[0, 5], color=[5, 7], $
+        sindfit = string(round(result[1]*100.0)/100., format='(f6.2)')
+        alpha = cgsymbol('alpha')
+        legend,[alpha+':'+sindfit, alpha+'!L5/3!N'], linestyle=[0, 5], color=[5, 7], $
             box=0, /top, /right, thick=[4, 4]
 
-    	axis, xaxis=0, xr = [10.0^wavenum0, 10.0^wavenum1], /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'
-    	axis, xaxis=1, xr = [10.0^wavenum0/rsunMm, 10^wavenum1/rsunMm], /xlog, /xs, xtitle='(Mm!U-1!N)'
+        axis, xaxis=0, xr = [10.0^wavenum0, 10.0^wavenum1], /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'
+        axis, xaxis=1, xr = [10.0^wavenum0/rsunMm, 10^wavenum1/rsunMm], /xlog, /xs, xtitle='(Mm!U-1!N)'
 
-    	if keyword_set(postscript) then device, /close
-    	;set_plot, 'x'   	
-	
+        if keyword_set(postscript) then device, /close
+
 stop	
 END

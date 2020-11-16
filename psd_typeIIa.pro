@@ -78,7 +78,7 @@ function apply_response, data, freq
 
 END
 
-pro psd_typeIIb_lin_v2, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
+pro psd_typeIIa, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
 
 	; PSD of first type II. Code working.
 
