@@ -18,7 +18,7 @@ end
 ;**********************************************;
 ;                               Plot GOES
 
-pro plot_goes_20190320, t1, t2, position=position, download=download, tlines=tlines
+pro plot_goes_20190320, t1, t2, position=position, download=download, tlines=tlines, imgtims=imgtims
 
         if keyword_set(download) then begin
                 use_network
@@ -63,6 +63,14 @@ pro plot_goes_20190320, t1, t2, position=position, download=download, tlines=tli
         outplot, anytim([tlines[1], tlines[1]], /cc), yrange, linestyle=5, thick=3
         ;outplot, anytim([tlines[2], tlines[2]], /cc), yrange, linestyle=0, thick=3
 
+	
+	; Plot vertical lines at times of images
+	outplot, anytim([imgtims[0], imgtims[0]], /cc), yrange, linestyle=0, thick=1
+        outplot, anytim([imgtims[1], imgtims[1]], /cc), yrange, linestyle=0, thick=1
+        outplot, anytim([imgtims[2], imgtims[2]], /cc), yrange, linestyle=0, thick=1
+
+
+
         legend, ['GOES15 0.1-0.8nm','GOES15 0.05-0.4nm'], $
                         linestyle=[0,0], $
                         color=[3,5], $
@@ -76,7 +84,7 @@ pro plot_goes_20190320, t1, t2, position=position, download=download, tlines=tli
 
 END
 
-pro plot_nfar, data, utimes, freq, scl=scl, pos=pos
+pro plot_nfar, data, utimes, freq, scl=scl, pos=pos, imgtims=imgtims
 
         data = reverse(data, 2)
         freq = reverse(freq)
@@ -97,6 +105,13 @@ pro plot_nfar, data, utimes, freq, scl=scl, pos=pos
                 xtitle='Time (UT)', yticklen=-5e-3, $
                 title='  ', pos=pos, /normal, color=250, ytickname=['60', '50', '40', '30', '20'], ytickv=[60, 50, 40, 30, 20], xr=[utimes[0], utimes[-1]]
 
+	yrange = [60.0, 20.0]
+	; Plot vertical lines at times of images
+        outplot, anytim([imgtims[0], imgtims[0]], /cc), yrange, linestyle=0, thick=2
+        outplot, anytim([imgtims[1], imgtims[1]], /cc), yrange, linestyle=0, thick=2
+        outplot, anytim([imgtims[2], imgtims[2]], /cc), yrange, linestyle=0, thick=2
+
+
 	data = cgScaleVector(Findgen(101), 100, 1000)
    	ticks = LogLevels([20,60], /fine)
    	nticks = N_Elements(ticks)
@@ -113,7 +128,7 @@ pro plot_goes_nenufar_v2, save=save, postscript=postscript
 	!p.charsize=1.5
 	path = '/databf2/nenufar-tf/ES11/2019/03/20190320_104900_20190320_125000_SUN_TRACKING_BHR/'
         file = 'SUN_TRACKING_20190320_104936_0.spectra'
-
+	imgtims = anytim('2019-03-20T'+['11:17:57', '11:23:09', '11:29:57'], /cc)
 
 	if keyword_set(postscript) then begin
                 setup_ps, './eps/nfar_goes_20190320.eps'
@@ -131,14 +146,14 @@ pro plot_goes_nenufar_v2, save=save, postscript=postscript
 		ntimes=10, tmin=29*60.0, tmax=45*60.0, fflat=3
         utimes0=anytim(file2time(file), /utim) + time
 	
-	plot_nfar, data, utimes0,  freq, scl=[4.5e5, 5e7], pos=[0.2, 0.45, 0.85, 0.7]
+	plot_nfar, data, utimes0,  freq, scl=[4.5e5, 5e7], pos=[0.2, 0.45, 0.85, 0.7], imgtims=imgtims
 	
 		
 	;-------------------------;
         ;       Plot GOES
         ;
         pos = [0.2, 0.75, 0.85, 0.95]
-        plot_goes_20190320, '2019-03-20T10:00', '2019-03-20T13:00', position=pos, tlines=[utimes0[0], utimes0[-1]]
+        plot_goes_20190320, '2019-03-20T10:00', '2019-03-20T13:00', position=pos, tlines=[utimes0[0], utimes0[-1]], imgtims=imgtims
 
 
 	if keyword_set(postscript) then begin
