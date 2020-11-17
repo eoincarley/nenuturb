@@ -136,7 +136,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
         ;       This gets an even sample in space
         ;       by interpolation.
         npoints=((freq*1e6/2.)/8980.0)^2.0
-        rads = density_to_radius(npoints, model='newkirk')
+        rads = density_to_radius(npoints, model='saito')
         even_rads = interpol([rads[0], rads[-1]], n_elements(freq))
         nt=n_elements(data[*,0])-1
         def = even_rads[2]-even_rads[1]
@@ -159,7 +159,6 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 
         axis, xaxis=0, xr = [even_rads[0], even_rads[-1]], /xs, xtitle='Heliocentric distance (R!Ls!N)'
         axis, xaxis=1, xr = [even_rads[0], even_rads[-1]]*rsunMm, /xs, xtitle='(Mm)'
-	stop
 
         power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$
                 /tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)

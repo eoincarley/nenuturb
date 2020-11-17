@@ -97,7 +97,7 @@ pro psd_typeIII_forest, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 	loadct, 0
         utplot, utimes, freq, yr=[f1,f0], /xs, /ys, xtitle=' ', ytitle='Frequency (MHz)', $
 		title='NenuFAR-ES11 '+time2file(utimes[0], /date), pos=posit, /normal, color=150, $
-		xr=[utimes[0], utimes[-1]], XTICKFORMAT="(A1)"
+		xr=[utimes[0], utimes[-1]];, XTICKFORMAT="(A1)"
 	
         ;------------------------------------------;
 	;	     Plot spectrogram
@@ -108,10 +108,13 @@ pro psd_typeIII_forest, save=save, plot_ipsd=plot_ipsd, postscript=postscript, r
 		ytitle=' ', xtitle=' ', yr=[f1, f0], /noerase, XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", $
 		position=posit, /normal, xr=[utimes[0], utimes[-1]]
 
+	stop
+
+
 	if ~keyword_set(postscript) then $
                 window, 1, xs=600, ys=600
         ;-----------------------------------------;
-        ;         Get all PSDs and fits 
+	;         Get all PSDs and fits 
         ;
         compute_all_psds, data, utimes, freq, $
                 sindices=sindices, stimes=stimes, pfreqs=pfreqs, powers=powers, $
