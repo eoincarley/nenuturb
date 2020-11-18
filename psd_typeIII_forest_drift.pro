@@ -17,7 +17,7 @@ end
 
 pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
    	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=8
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=8, nchan=512
         
 	utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
@@ -57,8 +57,11 @@ pro psd_typeIII_forest_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscr
 	path = '/databf2/nenufar-tf/ES11/2019/03/20190320_104900_20190320_125000_SUN_TRACKING_BHR/'
     	file = 'SUN_TRACKING_20190320_104936_0.spectra'
 
-	t0 = 39.7
-	t1 = 40.0	
+	;t0 = 39.7
+	;t1 = 40.0	
+	
+	t0 = 39.5
+        t1 = 41.5
 	f0 = 35.0
 	f1 = 45.0
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
@@ -71,7 +74,7 @@ pro psd_typeIII_forest_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscr
 		window, xs=1400, ys=600
 	endelse	
 
-	posit=[0.05, 0.15, 0.29, 0.9]
+	posit=[0.05, 0.15, 0.68, 0.9]
     
     	;------------------------------------------;
 	;	     Plot spectrogram
@@ -105,6 +108,7 @@ pro psd_typeIII_forest_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscr
     	loadct, 0
 	iburst = data[itpeak, findex]
 	fburst = freq[findex]
+	tburst = utimes[itpeak]
 	while freq[findex] gt 39.6 do begin	
 		it0 = itpeak-tpix
         	it1 = itpeak+tpix
@@ -116,6 +120,7 @@ pro psd_typeIII_forest_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscr
 		isample = data[itpeak, findex]
 		iburst = [iburst, isample]
 		fburst = [fburst, freq[findex]]
+		tburst = [tburst, utimes[itpeak]]
 		findex=findex+1
 	endwhile
 
@@ -147,14 +152,14 @@ pro psd_typeIII_forest_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscr
     	even_prof = even_prof/max(even_prof)
 
     	set_line_color
-    	plot, even_rads, even_prof/1e7, /xs, /ys, pos=[0.37, 0.15, 0.65, 0.9], /normal, /noerase, $
-        	xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=1e-10, color=0
+    	;plot, even_rads, even_prof/1e7, /xs, /ys, pos=[0.37, 0.15, 0.65, 0.9], /normal, /noerase, $
+        ;	xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=1e-10, color=0
 
-    	axis, xaxis=0, xr = [even_rads[0], even_rads[-1]], /xs, xtitle='Heliocentric distance (R!Ls!N)'
-    	axis, xaxis=1, xr = [even_rads[0], even_rads[-1]]*rsunMm, /xs, xtitle='(Mm)'
+    	;axis, xaxis=0, xr = [even_rads[0], even_rads[-1]], /xs, xtitle='Heliocentric distance (R!Ls!N)'
+    	;axis, xaxis=1, xr = [even_rads[0], even_rads[-1]]*rsunMm, /xs, xtitle='(Mm)'
 
     	power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$
-        	/tukey, width=0.001, sig_level=0.05, SIGNIFICANCE=signif)
+        	/tukey, width=0.002, sig_level=0.05, SIGNIFICANCE=signif)
 
     	pfreq = alog10(pfreq*2.0*!pi) ; x 2pi to get wavenumber from 1/lambda
     	power = alog10(power)
@@ -202,5 +207,21 @@ pro psd_typeIII_forest_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscr
     if keyword_set(postscript) then device, /close
     ;set_plot, 'x'   
 
+	;-------------------------------;
+        ;       Fit burst
+        ;       
+        window, 1, xs=500, ys=500
+        ;tburst = [tburst[20], tburst[-20]]
+        ;rads = [rads[20], rads[-20]]
+        tsec = tburst - tburst[0]
+        plot, tsec, rads, xtitle='Time (s)', ytitle='Heliocentric distance', /xs, /ys
+        result = linfit(tsec, rads)
+        ymodel = result[0] + result[1]*tsec
+        set_line_color
+        oplot, tsec, ymodel, color=5
+        speed = result[1]*695.0e6/2.98e8
+        print, 'Speed (c): '+string(speed)
+	drift = (linfit(tsec, fburst))[1]
+	print, 'Frequency drift (MHz/s): '+string(drift)
 
 END
