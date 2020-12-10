@@ -16,8 +16,15 @@ pro setup_ps, name, xsize=xsize, ysize=ysize
 end
 
 pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
-   	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=8, nchannels=512
+   	
+	
+	restore, 'calibration_factor.sav'
+	freq=freq0 & corrf=corrf0
+	;READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
+	;	jd0,h0, corrf, tmin=t0*60.0, tmax=t1*60.0, ntimes=8, nchannels=512, $
+	;	fmin=f0, fmax=f1, /exactfreq, fflat=4, ex_chan=[0], /fill
+	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, jd0, h0, corrf, $
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=4, ntimes=5, ex_chan=[0], /fill
         
 	utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
@@ -67,7 +74,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 		setup_ps, './eps/psd_hbone_drift_H.eps', xsize=18, ysize=5.5
 	endif else begin
 		!p.charsize=1.8
-		window, xs=1600, ys=600
+		window, xs=1000, ys=400 ;xs=1600, ys=600
 	endelse	
 
 	posit=[0.05, 0.15, 0.42, 0.9]
@@ -86,7 +93,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	restore, 'herringbone_tfpoint_H.sav'
 	hdata = data
 	hfreq = freq
-	save, hdata, hfreq, filename='hbone_map_H.sav'
+	;save, hdata, hfreq, filename='hbone_map_H.sav'
 
 	findex = (where(freq le fpoint))[0]
 	tindex = (where(utimes ge tpoint))[0]
@@ -151,7 +158,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	;  Get evenly sampled in space and perform PSD
         ;
         even_prof = interpol(prof, rads, even_rads)
-        even_prof = even_prof/max(even_prof)
+        even_prof = even_prof;/max(even_prof)
 
         plot, even_rads, even_prof, /xs, /ys, pos=[0.48, 0.15, 0.7, 0.9], /normal, /noerase, $
                 xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=-1e-8
