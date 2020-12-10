@@ -20,15 +20,24 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 	
 	restore, 'calibration_factor.sav'
 	freq=freq0 & corrf=corrf0
+	
+	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, tmin=t0*60.0, tmax=t1*60.0, ntimes=8, ex_chan=[0], /fill
+	data=data/rebin(reform(cor,1,nf),nt,nf)
+	w=where(freq ge f0 and freq le f1)
+	data=data[*,w]
+	freq = freq[w]
+
 	;READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
-	;	jd0,h0, corrf, tmin=t0*60.0, tmax=t1*60.0, ntimes=8, nchannels=512, $
-	;	fmin=f0, fmax=f1, /exactfreq, fflat=4, ex_chan=[0], /fill
-	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, jd0, h0, corrf, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=4, ntimes=5, ex_chan=[0], /fill
+	;	jd0, h0, corrf, tmin=t0*60.0, tmax=t1*60.0, ntimes=8, nchannels=512, $
+	;	fmin=f0, fmax=f1, /exactfreq, fflat=4, /fill
+;	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, jd0, h0, corrf, $
+ ;               tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=8, ex_chan=[0], /fill, /exactfreq
         
 	utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
         freq = reverse(freq)
+
+stop	
 end
 
 pro plot_spectro, data, time, freq, f0, f1, posit
@@ -143,7 +152,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
         ;       This gets an even sample in space
         ;       by interpolation.
         npoints=((freq*1e6/2.)/8980.0)^2.0
-        rads = density_to_radius(npoints, model='saito')
+        rads = density_to_radius(npoints, model='newkirk')
         even_rads = interpol([rads[0], rads[-1]], n_elements(freq))
         nt=n_elements(data[*,0])-1
         def = even_rads[2]-even_rads[1]
@@ -158,7 +167,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	;  Get evenly sampled in space and perform PSD
         ;
         even_prof = interpol(prof, rads, even_rads)
-        even_prof = even_prof;/max(even_prof)
+        even_prof = even_prof/max(even_prof)
 
         plot, even_rads, even_prof, /xs, /ys, pos=[0.48, 0.15, 0.7, 0.9], /normal, /noerase, $
                 xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=-1e-8

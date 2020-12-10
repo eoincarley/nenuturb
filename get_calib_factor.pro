@@ -10,6 +10,14 @@ m5 = fltarr(nf)
 for i=0, nf-1 do m5[i] = dyn_n(data[*,i], 0.05)
 m=m5/(1-gauss_cvf(0.05)/sqrt(df*1000.*dt/2.))           ; /2=apod, m <=> SEFD
 
+
+; ad-hoc correction curve from a method similar to fflat=3 but applied to the robust background
+nchannels=h0.fftlen & nbeamlets=h0. nbeamlets
+cor=reform(m,nchannels,nbeamlets)
+cor=cor/rebin(reform(median(cor,dimension=1),1,nbeamlets),nchannels,nbeamlets)
+cor=reform(cor,nf)
+
+
 ; Determination of the effective area at time of observation
 ; Coordinates => Sun elev ~42° on 2019/03/20, azim ~180° => use of nenufar_gain.pro (on /cep/lofar/nenufar/pro/general)
 a = [-1]
@@ -29,6 +37,6 @@ k = 1.38e3
 SEFD = 2.*k*T/ae
 corrf0 = m/SEFD
 freq0 = freq
-save, freq0, corrf0, filename = 'calibration_factor.sav'
+save, freq0, cor, corrf0, filename = 'calibration_factor.sav'
 
 END
