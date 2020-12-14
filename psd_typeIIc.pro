@@ -29,7 +29,7 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 
 
    	READ_NU_SPEC, file, data,time,freq,beam,ndata,nt,dt,nf,df,ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=4;, fclean=6
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=8, ex_chan=[0], /exactfreq, /fill;, fclean=6
         utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
         freq = reverse(freq)
@@ -42,7 +42,7 @@ function plot_alpha_time, utimes, sindices
         sturb1 = -7/3.
         alpha = cgsymbol('alpha')
         utplot, utimes, sindices, pos=[0.12, 0.54, 0.95, 0.74], $
-                /noerase, /xs, /ys, yr=[-3, -1.0], $
+                /noerase, /xs, /ys, yr=[-3.5, -1.0], $
                 psym=1, symsize=0.8, color=5, xr=[utimes[0], utimes[-1]], $
                 xtitle='Time (UT)', ytitle='PSD spectral index ('+alpha+')'
 
@@ -62,14 +62,14 @@ function plot_alpha_hist, sindices
 	set_line_color
         plothist, sindices, bin=0.025, $
                 xtitle='PSD spectral index '+alpha, ytitle='Count', $
-                pos = [0.59, 0.18, 0.95, 0.42], /noerase, color=0, yr=[0, 600], thick=4
+                pos = [0.59, 0.18, 0.95, 0.42], /noerase, color=0, yr=[0, 300], thick=4
         meanalpha = string(round(median(sindices)*100.)/100.0, format='(f5.2)')
         oplot, [meanalpha, meanalpha], [0, 600.0], color=5, thick=5
         oplot, [-1.66, -1.66], [0, 600.0], color=7, thick=4, linestyle=5
 	oplot, [-2.33, -2.33], [0, 600.0], color=6, thick=4, linestyle=5
 
-        legend,[cgsymbol('mu')+'!L'+alpha+'!N: '+meanalpha, alpha+'!L5/3!N', alpha+'!L7/3!N'], linestyle=[0, 5, 5], color=[5, 7, 6], $
-                box=0, /top, /left, charsize=1.4, thick=[5,4,4]
+        legend,[cgsymbol('mu')+'!L'+alpha+'!N: '+meanalpha, alpha+'!L7/3!N'], linestyle=[0, 5], color=[5, 6], $
+                box=0, /top, /left, charsize=1.5, thick=[5,4]
  	
 end
 
@@ -141,7 +141,7 @@ pro psd_typeIIc, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=re
 	;
 	compute_all_psds, data, utimes, freq, $
         	sindices=sindices, stimes=stimes, pfreqs=pfreqs, powers=powers, $
-        	pspecerr=pspecerr, sigcuts=sigcuts, component=2,  psdsmooth=0.001, pval=1.0
+        	pspecerr=pspecerr, sigcuts=sigcuts, component=2, psdsmooth=0.001, pval=5.0;, /plot_ipsd
 
 	
 	if ~keyword_set(postscript) then wset, 0
@@ -163,7 +163,7 @@ pro psd_typeIIc, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=re
 	;
 	;	Plot all psd
 	;
-	result = plot_all_psd(pfreqs, powers, stimes, powrange=[-8.0, -1.0])
+	result = plot_all_psd(pfreqs, powers, stimes, powrange=[-8.0, -2.0])
 
 	if keyword_set(postscript) then device, /close
 	set_plot, 'x'

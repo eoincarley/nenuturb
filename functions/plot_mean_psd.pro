@@ -36,10 +36,10 @@ function plot_mean_psd, powers, pfreqs, pspecerr, sigcuts
 	;----------------------------;
         ;    Plor 5/3 and 7/3 PSDs.
         ;
-        powturb = p[0]-0.95 + (-5/3.)*alog10(pfsim)
+        powturb = p[0]-1.05 + (-5/3.)*alog10(pfsim)
         oplot, pfsim, 10^powturb, linestyle=5, color=7, thick=8
 
-        powturb = p[0]+0.2 + (-7/3.)*alog10(pfsim)
+        powturb = p[0]+0.1 + (-7/3.)*alog10(pfsim)
         oplot, pfsim, 10^powturb, linestyle=5, color=6, thick=8
 	
 	;----------------------------;

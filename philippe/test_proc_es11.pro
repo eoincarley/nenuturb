@@ -29,14 +29,14 @@ filename = path+file
 window, 0, xs=700, ys=700
 !p.charsize=1.3
 !p.multi=[0,2,2]
-loadct,13
+loadct,0
 
 ; computation of a robust background from the 5% intensity quantile of a quiet interval
 READ_NU_SPEC, filename, data,time,freq,beam,ndata, nt,dt,nf,df,ns, jd0,h0, tmax=4*60.
 m5=fltarr(nf)
 for i=0,nf-1 do m5(i)=dyn_n(data(*,i),0.05)
 m=m5/(1-gauss_cvf(0.05)/sqrt(df*1000.*dt/2.))		; /2=apod, m <=> SEFD
-plot_io,freq,m,/xsty,xtit='Frequency (MHz)',ytit='Background',tit='0-14 min > start'
+;plot_io,freq,m,/xsty,xtit='Frequency (MHz)',ytit='Background',tit='0-14 min > start'
 
 ; ad-hoc correction curve from a method similar to fflat=3 but applied to the robust background
 nchannels=h0.fftlen & nbeamlets=h0. nbeamlets
@@ -62,7 +62,7 @@ k=1.38e3
 SEFD=2.*k*T/ae
 corrf0 = m/SEFD & freq0=freq
 
-t0 = 33.0 & t1 = 34.5 & f0 = 21.0 & f1 = 24.0
+t0 = 33.0 & t1 = 34.5 & f0 = 32.0 & f1 = 50.0
 
 ; raw data
 ;READ_NU_SPEC, filename, data, time, freq, beam, ndata, nt, dt, nf, df, ns, tmin=t0*60.0, tmax=t1*60.0, ntimes=2, fmin=f0, fmax=f1, /exactfreq

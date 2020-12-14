@@ -16,8 +16,9 @@ pro setup_ps, name, xsize=xsize, ysize=ysize
 end
 
 pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
-   	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=8, nchannels=512
+   	
+	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=8, ex_chan=[0], /fill, /exactfreq
         
 	utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
@@ -103,21 +104,12 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	it1 = tindex+tpix
 	iprof = data[it0:it1, findex]
 	utprof = utimes[it0:it1]
-       	;window, 1, xs=500, ys=500
-	;utplot, utprof, iprof, tickunit=10.0
-
 	itpeak = where(iprof eq max(iprof)) + it0
-	
-	;wset, 0
-	;plot_spectro, data, utimes, freq, f0, f1, posit
-	;loadct, 0
-	;plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=2, color=0	
-
 
 	set_line_color
 	iburst = data[itpeak, findex]
 	fburst = freq[findex]
-	while freq[findex] gt 21.0 do begin	
+	while freq[findex] gt 21.02 do begin	
 		it0 = itpeak-tpix
         	it1 = itpeak+tpix
 		iprof = data[it0:it1, findex]
@@ -172,7 +164,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
         axis, xaxis=1, xr = [even_rads[0], even_rads[-1]]*rsunMm, /xs, xtitle='(Mm)'
 
         power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$
-                /tukey, width=0.002, sig_level=0.01, SIGNIFICANCE=signif)
+                /tukey, width=0.0025, sig_level=0.01, SIGNIFICANCE=signif)
 
         pfreq = alog10(pfreq*2.0*!pi) ; x 2pi to get wavenumber from 1/lambda
 	power = alog10(power)

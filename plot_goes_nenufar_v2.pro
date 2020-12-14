@@ -93,8 +93,9 @@ pro plot_nfar, data, utimes, freq, scl=scl, pos=pos, imgtims=imgtims
 
 	loadct, 74
         reverse_ct
-        spectro_plot, bytscl(data, scl[0], scl[1]), utimes, freq, /xs, /ys, $
-                ytitle=' ', xtitle=' ', yr=[60, 20], /noerase, XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", $
+        ;spectro_plot, bytscl(data, scl[0], scl[1]), utimes, freq, /xs, /ys, $
+        spectro_plot, sigrange(alog10(data)), utimes, freq, /xs, /ys, $
+		ytitle=' ', xtitle=' ', yr=[60, 20], /noerase, XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", $
                 position=pos, /ylog , /normal, title=' ', ytickname=['60', '50', '40', '30', '20'], xr=[utimes[0], utimes[-1]], yticklen=-5e-10
 
         ;------------------------------------------;
@@ -142,6 +143,14 @@ pro plot_goes_nenufar_v2, save=save, postscript=postscript
         ;------------------------------------;
 	; 	First spectrogram
 	;
+	t0 = 28.0 & t1 = 44.0 
+	restore, 'calibration_factor.sav'
+        freq=freq0 & corrf=corrf0
+
+        ;READ_NU_SPEC, path+file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
+        ;       jd0, h0, corrf, tmin=t0*60.0, tmax=t1*60.0, ntimes=8, nchannels=512, $
+        ;       fmin=f0, fmax=f1, /exactfreq, fflat=4, /fill
+
 	READ_NU_SPEC, path+file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
 		ntimes=10, tmin=28.0*60.0, tmax=44.0*60.0, fflat=3
         utimes0=anytim(file2time(file), /utim) + time

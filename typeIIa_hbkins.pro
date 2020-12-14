@@ -16,9 +16,12 @@ pro setup_ps, name, xsize=xsize, ysize=ysize
 end
 
 pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
-   	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=16, nchannels=512
-        
+   	
+	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=16, $
+		ex_chan=[0], /fill, /exactfreq
+       
+       	stop	
 	utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
         freq = reverse(freq)
@@ -59,7 +62,7 @@ pro typeIIa_hbkins, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin
 	t0 = 33.0
         t1 = 35.0
         f0 = 32.0
-        f1 = 45.0
+        f1 = 55.0
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 	   
 
@@ -113,7 +116,7 @@ pro typeIIa_hbkins, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin
 	fburst = freq[findex]
 	tburst = utimes[itpeak]
 	print, iburst_max
-	while isample gt iburst_max*0.6 do begin	
+	while isample gt iburst_max*0.5 do begin	
 		it0 = itpeak-tpix
         	it1 = itpeak+tpix
 		iprof = data[it0:it1, findex]
@@ -125,17 +128,14 @@ pro typeIIa_hbkins, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin
 		iburst = [iburst, isample]
 		fburst = [fburst, freq[findex]]
 		tburst = [tburst, utimes[itpeak]]
-		findex=findex+1
+		findex = findex-1
 		;print, isample
 	endwhile
 
-	set_line_color
-        contour, alog10(smooth(data, 10)), levels=[7.55], position=posit, /noerase, $
-                XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", xticklen=-1e-8, yticklen=-1e-8, thick=3,  color=0, /xs, /ys
-
-
-	freq = fburst
-	prof = iburst
+	freq = fburst[1:-1]
+	prof = iburst[1:-1]
+	tburst = tburst[1:-1]
+	
 	;---------------------------------------;
 	;	Now perform PSD on iburst
 	;	
@@ -144,31 +144,33 @@ pro typeIIa_hbkins, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin
         ;       in f, but unevenly in space.
         ;       This gets an even sample in space
         ;       by interpolation.
-        npoints=((freq*1e6/2.)/8980.0)^2.0
+        npoints = ((freq*1e6/2.)/8980.0)^2.0
         rads = density_to_radius(npoints, model='newkirk')
         even_rads = interpol([rads[0], rads[-1]], n_elements(freq))
-        nt=n_elements(data[*,0])-1
-        def = even_rads[2]-even_rads[1]
+        nt = n_elements(data[*,0])-1
+        def = abs(even_rads[2]-even_rads[1])
         pspecerr = 0.05
 	wavenum0 = 1.0+alog10(2.0*!pi)
         wavenum1 = 3.5+alog10(2.0*!pi)
 	rsunMm = 696.34 ; Mm
-
-	loadct, 0
+	
+	stop
         ;----------------------------------------------;
         ;
 	;  Get evenly sampled in space and perform PSD
         ;
         even_prof = interpol(prof, rads, even_rads)
         even_prof = even_prof/max(even_prof)
-
-        ;plot, even_rads, even_prof, /xs, /ys, pos=[0.48, 0.15, 0.7, 0.9], /normal, /noerase, $
+	
+	;loadct, 0
+        ;wset, 1
+	;plot, even_rads, even_prof, /xs, /ys, /normal, $
         ;        xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=-1e-8
-
 
         ;axis, xaxis=0, xr = [even_rads[0], even_rads[-1]], /xs, xtitle='Heliocentric distance (R!Ls!N)'
         ;axis, xaxis=1, xr = [even_rads[0], even_rads[-1]]*rsunMm, /xs, xtitle='(Mm)'
-
+	
+	;stop
         power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$
                 /tukey, width=0.0025, sig_level=0.01, SIGNIFICANCE=signif)
 
@@ -183,17 +185,18 @@ pro typeIIa_hbkins, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin
 	;----------------------------------;
     	;       Fit PSD and plot
     	;
+	set_line_color
+	plot, 10^pfreq, 10^power, /xlog, /ylog, /xs, /ys, ytitle='PSD', $
+            xtitle=' ', thick=2, xr = [10^wavenum0, 10^wavenum1], yr=10.0^[-7.0, -2.0], $
+                /noerase, position=[0.76, 0.15, 0.96, 0.9], psym=10, $
+            XTICKFORMAT="(A1)", xticklen=1e-10, /normal
+	
     	result = fit_psd(pfreq, power, pspecerr=pspecerr)
     	pvalue = result[4]
     	pfsim = interpol([pfreq[0], pfreq[-1]], 100)
     	powsim = result[0] + result[1]*pfsim
     	rsusMm = 696.34 ; Mm
 	turbindex = result[1]
-	set_line_color
-    	plot, 10^pfreq, 10^power, /xlog, /ylog, /xs, /ys, ytitle='PSD', $
-            xtitle=' ', thick=2, xr = [10^wavenum0, 10^wavenum1], yr=10.0^[-7.0, -2.0], $
-	        /noerase, position=[0.76, 0.15, 0.96, 0.9], psym=10, $
-            XTICKFORMAT="(A1)", xticklen=1e-10, /normal
 
 	;----------------------------;
         ;    Plor 5/3 and 7/3 PSDs.
@@ -236,7 +239,8 @@ pro typeIIa_hbkins, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin
 
 	hbspeeds = [hbspeeds, speed]
 	hbalphas = [hbalphas, turbindex]
-        endfor	
+        
+	endfor	
 
 	stop	
 END

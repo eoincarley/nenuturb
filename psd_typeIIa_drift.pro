@@ -21,23 +21,22 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 	restore, 'calibration_factor.sav'
 	freq=freq0 & corrf=corrf0
 	
-	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, tmin=t0*60.0, tmax=t1*60.0, ntimes=8, ex_chan=[0], /fill
-	data=data/rebin(reform(cor,1,nf),nt,nf)
-	w=where(freq ge f0 and freq le f1)
-	data=data[*,w]
-	freq = freq[w]
+	;READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, tmin=t0*60.0, tmax=t1*60.0, ntimes=8, ex_chan=[0], /fill
+	;data=data/rebin(reform(cor,1,nf),nt,nf)
+	;w=where(freq ge f0 and freq le f1)
+	;data=data[*,w]
+	;freq = freq[w]
 
 	;READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
 	;	jd0, h0, corrf, tmin=t0*60.0, tmax=t1*60.0, ntimes=8, nchannels=512, $
 	;	fmin=f0, fmax=f1, /exactfreq, fflat=4, /fill
-;	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, jd0, h0, corrf, $
- ;               tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=8, ex_chan=[0], /fill, /exactfreq
+	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=8, ex_chan=[0], /fill, /exactfreq
         
 	utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
         freq = reverse(freq)
 
-stop	
 end
 
 pro plot_spectro, data, time, freq, f0, f1, posit
@@ -102,7 +101,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	restore, 'herringbone_tfpoint_H.sav'
 	hdata = data
 	hfreq = freq
-	;save, hdata, hfreq, filename='hbone_map_H.sav'
+	;save, hdata, hfreq, filename='hbone_map_H.sav' ; to be used in plot of hbone F map.
 
 	findex = (where(freq le fpoint))[0]
 	tindex = (where(utimes ge tpoint))[0]
@@ -112,9 +111,6 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	it1 = tindex+tpix
 	iprof = data[it0:it1, findex]
 	utprof = utimes[it0:it1]
-       	;window, 1, xs=500, ys=500
-	;utplot, utprof, iprof, tickunit=10.0
-
 	itpeak = where(iprof eq max(iprof)) + it0
 	
 	set_line_color

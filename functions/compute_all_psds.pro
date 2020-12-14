@@ -45,12 +45,11 @@ pro compute_all_psds, data, utimes, freq, $
 
                 ;print, ' '
                 ;print, 'Reduced chi square value: ' + string(chisq)
-                ;print, 'Prob random variables has better chi: '+ string(pvalue)+'%'
+                ;print, 'Probability random samples have worse chi: '+ string(pvalue)+'%'
                 ;print, '---'
 
                 pfsim = interpol([pfreq[0], pfreq[-1]], 100)
                 powsim = result[0] + result[1]*pfsim
-
 		if pvalue gt pvalcutoff then begin
 
                         if keyword_set(plot_ipsd) then begin
@@ -65,9 +64,10 @@ pro compute_all_psds, data, utimes, freq, $
                         oplot, pfsim, powsim, color=10
                         oplot, [wavenum0, wavenum1], [sigcutoff, sigcutoff], color=200
                         ;wait, 0.001
-                        stop
+                        
                         xyouts, 0.6, 0.8, pvalue, /normal
-                        endif
+                        wait, 0.01
+			endif
 
                         sindices[i] = result[1]
                         stimes[i] = utimes[i]
