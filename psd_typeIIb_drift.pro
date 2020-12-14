@@ -192,7 +192,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	;----------------------------;
         ;    Plor 5/3 and 7/3 PSDs.
         ;
-        powturb = result[0]-0.49 + (-5/3.)*pfsim
+        powturb = result[0]-0.65 + (-5/3.)*pfsim
         oplot, 10^pfsim, 10^powturb, linestyle=5, color=7, thick=8
         oplot, 10^pfsim, 10^powsim, color=5, thick=4
 
