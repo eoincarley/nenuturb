@@ -24,7 +24,7 @@ function plot_mean_psd, powers, pfreqs, pspecerr, sigcuts
         powsim = 10^powsim
         pfsim = 10^pfsim
 
-        plot, mf, mp, /xs, /ys, ytitle='PSD', $
+        plot, mf, mp, /xs, /ys, ytitle='PSD', psym=10, $
               pos = [0.15, 0.15, 0.9, 0.9], /noerase, thick=5, XTICKINTERVAL=0.5, /ylog, /xlog, $
               xr=[10.0^wavenum0, 10.0^wavenum1], XTICKFORMAT="(A1)", xticklen=1e-10
 

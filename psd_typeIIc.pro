@@ -62,8 +62,10 @@ function plot_alpha_hist, sindices
 	set_line_color
         plothist, sindices, bin=0.025, $
                 xtitle='PSD spectral index '+alpha, ytitle='Count', $
-                pos = [0.59, 0.18, 0.95, 0.42], /noerase, color=0, yr=[0, 300], thick=4
-        meanalpha = string(round(median(sindices)*100.)/100.0, format='(f5.2)')
+                pos = [0.59, 0.18, 0.95, 0.42], /noerase, color=0, yr=[0, 300], thick=4, xticks=3, $
+        	xtickv=[-3.0, -2.6, -2.2, -1.8]
+	
+	meanalpha = string(round(median(sindices)*100.)/100.0, format='(f5.2)')
         oplot, [meanalpha, meanalpha], [0, 600.0], color=5, thick=5
         oplot, [-1.66, -1.66], [0, 600.0], color=7, thick=4, linestyle=5
 	oplot, [-2.33, -2.33], [0, 600.0], color=6, thick=4, linestyle=5
