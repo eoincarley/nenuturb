@@ -23,6 +23,6 @@ function plot_all_psd, pfreqs, powers, times, powrange=powrange
 
         trange = (times - times[0])/60.0
         cgCOLORBAR, range=[trange[0], trange[-1]],  POSITION=[0.12, 0.43, 0.48, 0.44], $
-                title='Mins after '+strmid(anytim(times[0], /cc, /trun), 11, 8), /top, charsize=1.8
+                title='Mins after '+strmid(anytim(times[0], /cc, /trun), 11, 8), /top, charsize=1.5
 
 END
