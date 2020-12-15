@@ -136,7 +136,7 @@ pro plot_goes_nenufar_v2, save=save, postscript=postscript
         endif else begin
 		loadct, 0
 		!p.color=0
-		!p.background=100
+		!p.background=200
                 window, xs=1200, ys=700
         endelse 
 
@@ -148,8 +148,7 @@ pro plot_goes_nenufar_v2, save=save, postscript=postscript
         freq=freq0 & corrf=corrf0
 
         ;READ_NU_SPEC, path+file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
-        ;       jd0, h0, corrf, tmin=t0*60.0, tmax=t1*60.0, ntimes=8, nchannels=512, $
-        ;       fmin=f0, fmax=f1, /exactfreq, fflat=4, /fill
+        ;       jd0, h0, corrf, tmin=t0*60.0, tmax=t1*60.0, ntimes=8, nchannels=512, /exactfreq, fflat=4, /fill
 
 	READ_NU_SPEC, path+file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
 		ntimes=10, tmin=28.0*60.0, tmax=44.0*60.0, fflat=3
