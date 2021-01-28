@@ -90,7 +90,7 @@ pro typeIIa_speed, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=
 	point, tpoints, fpoints, /data
 	
 	npoints=((fpoints*1e6/2.)/8980.0)^2.0
-        rads = density_to_radius(npoints, model='leblanc')
+        rads = density_to_radius(npoints, model='saito', fold=3.5)
 	
 
 	;----------------------------------;

@@ -39,6 +39,17 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 
 end
 
+function remove_spikes, prof
+
+	; Harcode removal of spikes, no fancy business.
+	endprof = prof[800:-1]
+	ind = where(endprof gt 3e7)
+	endprof[ind] = median(endprof)
+	prof[800:-1] = endprof
+	return, prof
+
+END
+
 pro plot_spectro, data, time, freq, f0, f1, posit
 
 	loadct, 0
@@ -59,12 +70,7 @@ END
 
 pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, rebin=rebin
 
-	; PSD of first type II. Code working.
-
-	; This version of the code excludes certain powerlaw fits based on their p-value.
-
-	; The version with drift extracts an intensity profile along a drifting structure within the radio burst. 
-	
+	; PSD of herringbone in type IIa	
 	; More appropriate when structures actually drift in frequency time.
 
 	path = '/databf2/nenufar-tf/ES11/2019/03/20190320_104900_20190320_125000_SUN_TRACKING_BHR/'
@@ -82,7 +88,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 		setup_ps, './eps/psd_hbone_drift_H.eps', xsize=18, ysize=5.5
 	endif else begin
 		!p.charsize=1.8
-		window, xs=1000, ys=400 ;xs=1600, ys=600
+		window, xs=1400, ys=600 ;xs=1600, ys=600
 	endelse	
 
 	posit=[0.05, 0.15, 0.42, 0.9]
@@ -106,7 +112,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	findex = (where(freq le fpoint))[0]
 	tindex = (where(utimes ge tpoint))[0]
 
-	tpix = 7.0 ; Search for peak in the next f channel at +/- 7 pix of peak in previous channel.
+	tpix = 5.0 ; Search for peak in the next f channel at +/- 7 pix of peak in previous channel.
 	it0 = tindex-tpix
 	it1 = tindex+tpix
 	iprof = data[it0:it1, findex]
@@ -117,28 +123,37 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=2, color=0	
 
 	iburst = data[itpeak, findex]
-	fburst = freq[findex]
-	while freq[findex] gt 34.0 do begin	
-		it0 = itpeak-tpix
-        	it1 = itpeak+tpix
-		iprof = data[it0:it1, findex]
-        	utprof = utimes[it0:it1]
-        	itpeak = where(iprof eq max(iprof)) + it0
-		plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=0.1, color=5
+        iburst_max = iburst
+        isample = iburst_max
+        fburst = freq[findex]
+        tburst = utimes[itpeak]
+        print, iburst_max
+        while isample gt iburst_max*0.4 do begin
+                it0 = itpeak-tpix
+                it1 = itpeak+tpix
+                iprof = data[it0:it1, findex]
+                utprof = utimes[it0:it1]
+                itpeak = where(iprof eq max(iprof)) + it0
+                plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=0.1, color=5
 
-		isample = data[itpeak, findex]
-		iburst = [iburst, isample]
-		fburst = [fburst, freq[findex]]
-		findex=findex+1
-	endwhile
+                isample = data[itpeak, findex]
+                iburst = [iburst, isample]
+                fburst = [fburst, freq[findex]]
+                tburst = [tburst, utimes[itpeak]]
+                findex = findex + 1
+                ;print, isample
+        endwhile
+
 
 	set_line_color
         contour, alog10(smooth(data, 10)), levels=[7.55], position=posit, /noerase, $
                 XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", xticklen=-1e-8, yticklen=-1e-8, thick=3,  color=0, /xs, /ys
 
 
-	freq = fburst
-	prof = iburst
+	freq = fburst[1:-1]
+	prof = iburst[1:-1]
+	prof = remove_spikes(prof)
+	
 	;---------------------------------------;
 	;	Now perform PSD on iburst
 	;	
@@ -156,7 +171,6 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	wavenum0 = 1.0+alog10(2.0*!pi)
         wavenum1 = 3.5+alog10(2.0*!pi)
 	rsunMm = 696.34 ; Mm
-
 	loadct, 0
         ;----------------------------------------------;
         ;
@@ -166,13 +180,13 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
         even_prof = even_prof/max(even_prof)
 
         plot, even_rads, even_prof, /xs, /ys, pos=[0.48, 0.15, 0.7, 0.9], /normal, /noerase, $
-                xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=-1e-8
+                xtitle=' ', ytitle='Intensity', XTICKFORMAT="(A1)", xticklen=-1e-8;, xtickv=[2.1, 2.15, 2.2]
 
 
-        axis, xaxis=0, xr = [even_rads[0], even_rads[-1]], /xs, xtitle='Heliocentric distance (R!Ls!N)'
+        axis, xaxis=0, xr = [even_rads[0], even_rads[-1]], xticks=4, xtickv=[2.1, 2.15, 2.2], xminor=2, /xs, xtitle='Heliocentric distance (R!Ls!N)'
         axis, xaxis=1, xr = [even_rads[0], even_rads[-1]]*rsunMm, /xs, xtitle='(Mm)'
 
-        power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq,$
+        power = FFT_PowerSpectrum(even_prof, def, FREQ=pfreq, $
                 /tukey, width=0.001, sig_level=0.01, SIGNIFICANCE=signif)
 
         pfreq = alog10(pfreq*2.0*!pi) ; x 2pi to get wavenumber from 1/lambda
@@ -194,7 +208,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 
 	set_line_color
     	plot, 10^pfreq, 10^power, /xlog, /ylog, /xs, /ys, ytitle='PSD', $
-            xtitle=' ', thick=2, xr = [10^wavenum0, 10^wavenum1], yr=10.0^[-7.0, -2.0], $
+            xtitle=' ', thick=2, xr = 10^[wavenum0,wavenum1], yr=10.0^[-7.0, -2.0], $
 	        /noerase, position=[0.76, 0.15, 0.96, 0.9], psym=10, $
             XTICKFORMAT="(A1)", xticklen=1e-10, /normal
 
@@ -211,7 +225,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
     	;
     	meansig = 10^sigcutoff
     	print, '99% confidence thresh: '+string(meansig)
-    	oplot, [10^wavenum0, 10^wavenum1], [meansig, meansig], linestyle=5, color=0
+    	oplot, 10^[wavenum0, wavenum1], [meansig, meansig], linestyle=5, color=0
 
     	;xerr = dblarr(n_elements(pfreq))
     	;yerr = pspecerr*abs(power) ;replicate(0.1, n_elements(pfreq))
@@ -222,8 +236,8 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
     	legend,[alpha+':'+sindfit, alpha+'!L5/3!N'], linestyle=[0, 5], color=[5, 7], $
             box=0, /top, /right, thick=[4, 4]
 
-    	axis, xaxis=0, xr = [10.0^wavenum0, 10.0^wavenum1], /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'
-    	axis, xaxis=1, xr = [10.0^wavenum0/rsunMm, 10^wavenum1/rsunMm], /xlog, /xs, xtitle='(Mm!U-1!N)'
+    	axis, xaxis=0, xr = 10^[wavenum0, wavenum1], /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'
+    	axis, xaxis=1, xr = [10^wavenum0/rsunMm, 10^wavenum1/rsunMm], /xlog, /xs, xtitle='(Mm!U-1!N)'
 
     	if keyword_set(postscript) then device, /close
     	;set_plot, 'x'   	
