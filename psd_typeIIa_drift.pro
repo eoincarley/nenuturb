@@ -163,7 +163,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
         ;       This gets an even sample in space
         ;       by interpolation.
         npoints=((freq*1e6/2.)/8980.0)^2.0
-        rads = density_to_radius(npoints, model='newkirk')
+        rads = density_to_radius(npoints, model='newkirk', fold=1)
         even_rads = interpol([rads[0], rads[-1]], n_elements(freq))
         nt=n_elements(data[*,0])-1
         def = even_rads[2]-even_rads[1]
