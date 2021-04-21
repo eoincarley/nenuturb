@@ -19,7 +19,10 @@ pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
    	
 	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
                 tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=8, ex_chan=[0], /fill, /exactfreq
-        
+       
+
+	print, 'Time resolution: '+string(dt)
+	stop	
 	utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
         freq = reverse(freq)
