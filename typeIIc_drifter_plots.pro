@@ -100,7 +100,7 @@ pro plot_powerspec, freq, prof, pos = pos, ytickfmt = ytickfmt, ytitle=ytitle, x
         ;----------------------------;
         ;    Plor 5/3 and 7/3 PSDs.
         ;
-        powturb = result[0]-0.5 + (-5/3.)*pfsim
+        powturb = result[0]-0.3 + (-5/3.)*pfsim
         oplot, 10^pfsim, 10^powturb, linestyle=5, color=7, thick=8
         oplot, 10^pfsim, 10^powsim, color=5, thick=4
 
