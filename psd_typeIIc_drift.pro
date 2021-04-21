@@ -17,7 +17,7 @@ end
 
 pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
    	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=8, nchannels=512
+                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=8, ex_chan=[0], /fill, /exactfreq
         
 	utimes=anytim(file2time(file), /utim) + time
         data = reverse(data, 2)
@@ -75,7 +75,7 @@ pro psd_typeIIc_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	;	     Plot spectrogram
 	;
         plot_spectro, data, utimes, freq, f0, f1, posit
-	;save, data, utimes, freq, f0, f1, filename='./typeIIc_drifters/typeIIc_drifter_spectrogram.sav'
+	save, data, utimes, freq, f0, f1, filename='./typeIIc_drifters/typeIIc_drifter_spectrogram.sav'
 	;------------------------------------------;
 	;
 	;	Extract profile along drift
@@ -219,7 +219,7 @@ pro psd_typeIIc_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
     	axis, xaxis=1, xr = [10.0^wavenum0/rsunMm, 10^wavenum1/rsunMm], /xlog, /xs, xtitle='(Mm!U-1!N)'
 	
 	timstr = time2file(tburst[0])
-	save, fburst, tburst, iburst, filename='./typeIIc_drifters/typeIIc_drifter_'+timstr+'.sav' 
+	save, fburst, tburst, iburst, filename='./typeIIc_drifters/typeIIc_drifter_'+timstr+'_2.sav' 
 
 
     	if keyword_set(postscript) then device, /close
