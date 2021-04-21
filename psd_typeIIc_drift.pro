@@ -56,10 +56,10 @@ pro psd_typeIIc_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
         file = 'SUN_TRACKING_20190320_104936_0.spectra'
 
 
-	t0 = 41.5
+	t0 = 42.5
         t1 = 45.0
         f0 = 21.0
-        f1 = 37.0	
+        f1 = 32.0	
 	read_nfar_data, path+file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
 	   
 
@@ -75,50 +75,59 @@ pro psd_typeIIc_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	;	     Plot spectrogram
 	;
         plot_spectro, data, utimes, freq, f0, f1, posit
-
+	;save, data, utimes, freq, f0, f1, filename='./typeIIc_drifters/typeIIc_drifter_spectrogram.sav'
 	;------------------------------------------;
 	;
 	;	Extract profile along drift
 	;
 	;loadct, 0
+	print, 'Choose start point'
 	cursor, tpoint, fpoint, /data
 	;save, tpoint, fpoint, filename='typeIIc_tfpoint_H.sav'
+
+	print, 'Choose stop freq'
+	cursor, tignore, freqstop, /data
 
 	findex = (where(freq le fpoint))[0]
 	tindex = (where(utimes ge tpoint))[0]
 
-	tpix = 7.0 ; Search for peak in the next f channel at +/- 7 pix of peak in previous channel.
+	tpix = 5.0 ; Search for peak in the next f channel at +/- 7 pix of peak in previous channel.
 	it0 = tindex-tpix
 	it1 = tindex+tpix
 	iprof = data[it0:it1, findex]
 	utprof = utimes[it0:it1]
-       	;window, 1, xs=500, ys=500
-	;utplot, utprof, iprof, tickunit=10.0
-
 	itpeak = where(iprof eq max(iprof)) + it0
 	
 	set_line_color
 	plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=2, color=0	
 
 	iburst = data[itpeak, findex]
-	fburst = freq[findex]
-	while freq[findex] gt 25.0 do begin	
-		it0 = itpeak-tpix
-        	it1 = itpeak+tpix
-		iprof = data[it0:it1, findex]
-        	utprof = utimes[it0:it1]
-        	itpeak = where(iprof eq max(iprof)) + it0
-		plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=0.1, color=5
+        iburst_max = iburst
+        isample = iburst_max
+        fburst = freq[findex]
+        tburst = utimes[itpeak]
+        print, iburst_max
+        while freq[findex] gt freqstop do begin
+                it0 = itpeak-tpix
+                it1 = itpeak+tpix
+                iprof = data[it0:it1, findex]
+                utprof = utimes[it0:it1]
+                itpeak = where(iprof eq max(iprof)) + it0
+                plots, utimes[itpeak], freq[findex], /data, psym=1, symsize=0.1, color=5
 
-		isample = data[itpeak, findex]
-		iburst = [iburst, isample]
-		fburst = [fburst, freq[findex]]
-		findex=findex+1
-	endwhile
+                isample = data[itpeak, findex]
+                iburst = [iburst, isample]
+                fburst = [fburst, freq[findex]]
+                tburst = [tburst, utimes[itpeak]]
+                findex = findex + 1
+                ;print, isample
+        endwhile
+
 
 	set_line_color
         contour, alog10(smooth(data, 10)), levels=[7.55], position=posit, /noerase, $
-                XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", xticklen=-1e-8, yticklen=-1e-8, thick=3,  color=0, /xs, /ys
+                XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", $
+		xticklen=-1e-8, yticklen=-1e-8, thick=3,  color=0, /xs, /ys
 
 
 	freq = fburst
@@ -208,6 +217,10 @@ pro psd_typeIIc_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 
     	axis, xaxis=0, xr = [10.0^wavenum0, 10.0^wavenum1], /xlog, /xs, xtitle='Wavenumber (R!U-1!N)'
     	axis, xaxis=1, xr = [10.0^wavenum0/rsunMm, 10^wavenum1/rsunMm], /xlog, /xs, xtitle='(Mm!U-1!N)'
+	
+	timstr = time2file(tburst[0])
+	save, fburst, tburst, iburst, filename='./typeIIc_drifters/typeIIc_drifter_'+timstr+'.sav' 
+
 
     	if keyword_set(postscript) then device, /close
     	;set_plot, 'x'   	
