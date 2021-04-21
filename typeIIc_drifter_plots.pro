@@ -20,7 +20,7 @@ pro plot_spectro, data, time, freq, f0, f1, posit
         loadct, 0
         utplot, time, freq, yr=[f1,f0], /xs, /ys, xtitle='Time (UT)', ytitle='Frequency (MHz)', $
                 title=' ', pos=posit, /normal, color=150, $
-                xr=[time[0], time[-1]], charsize=1.8
+                xr=[time[0], time[-1]], charsize=1.5
         ;------------------------------------------;
         ;            Plot spectrogram
         ;
@@ -132,13 +132,13 @@ pro typeIIc_drifter_plots, postscript=postscript
 
 	if keyword_set(postscript) then begin
                 setup_ps, './eps/psd_typeIc_drifters.eps', xsize=8, ysize=8*(9/6.)
-		!p.charsize=1.8
+		!p.charsize=1.5
         endif else begin
                 !p.charsize=1.8
                 window, xs=600, ys=900
         endelse
 
-	posit = [0.15, 0.55, 0.95, 0.85]
+	posit = [0.15, 0.59, 0.95, 0.89]
 	restore,'./typeIIc_drifters/typeIIc_drifter_spectrogram.sav'
 	plot_spectro, data, utimes, freq, f0, f1, posit
 
