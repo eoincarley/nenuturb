@@ -131,14 +131,14 @@ END
 pro typeIIc_drifter_plots, postscript=postscript
 
 	if keyword_set(postscript) then begin
-                setup_ps, './eps/psd_typeIc_drifters.eps', xsize=6, ysize=9
-		!p.charsize=1.8
+                setup_ps, './eps/psd_typeIc_drifters.eps', xsize=8, ysize=8*(9/6.)
+		!p.charsize=1.0
         endif else begin
                 !p.charsize=1.8
                 window, xs=600, ys=900
         endelse
 
-	posit = [0.15, 0.6, 0.95, 0.94]
+	posit = [0.15, 0.6, 0.95, 0.9]
 	restore,'./typeIIc_drifters/typeIIc_drifter_spectrogram.sav'
 	plot_spectro, data, utimes, freq, f0, f1, posit
 
