@@ -122,7 +122,7 @@ pro plot_powerspec, freq, prof, pos = pos, ytickfmt = ytickfmt, ytitle=ytitle, x
         ;   box=0, /top, /right, thick=[4, 4]
 
         axis, xaxis=0, xr = [10.0^wavenum0, 10.0^wavenum1], /xlog, /xs, xtitle=xtitle, xtickname=['10!U1!N', '10!U2!N', '10!U3!N']
-        axis, xaxis=1, xr = [10.0^wavenum0/rsunMm, 10^wavenum1/rsunMm], /xlog, /xs, xtitle=xtiupper, xtickname=[' ', '10!U0!N', '10!U1!N']
+        axis, xaxis=1, xr = [10.0^wavenum0/rsunMm, 10^wavenum1/rsunMm], /xlog, /xs, xtitle=' ', xtickname=[' ', '10!U0!N', '10!U1!N']
 
 
 
