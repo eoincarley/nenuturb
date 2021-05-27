@@ -153,7 +153,7 @@ pro psd_typeIIa_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	freq = fburst[1:-1]
 	prof = iburst[1:-1]
 	prof = remove_spikes(prof)
-  save, prof, freq, filename='~/nenuturb/savs/hbfluxprofile.sav'	
+  save, prof, fburst, tburst, filename='~/nenuturb/savs/hbfluxprofile.sav'	
 	;---------------------------------------;
 	;	Now perform PSD on iburst
 	;	

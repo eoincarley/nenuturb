@@ -18,7 +18,7 @@ end
 pro read_nfar_data, file, t0, t1, f0, f1, data=data, utimes=utimes, freq=freq
    	
 	READ_NU_SPEC, file, data, time, freq, beam, ndata, nt, dt, nf, df, ns, $
-                tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=8, ex_chan=[0], /fill, /exactfreq
+    tmin=t0*60.0, tmax=t1*60.0, fmin=f0, fmax=f1, fflat=3, ntimes=8, ex_chan=[0], /fill, /exactfreq
        
 
 	print, 'Time resolution: '+string(dt)
@@ -30,17 +30,18 @@ end
 pro plot_spectro, data, time, freq, f0, f1, posit
 
 	loadct, 0
-        utplot, time, freq, yr=[f1,f0], /xs, /ys, xtitle='Time (UT)', ytitle='Frequency (MHz)', $
-                title=' ', pos=posit, /normal, color=150, $
-                xr=[time[0], time[-1]]
-	;------------------------------------------;
-        ;            Plot spectrogram
-        ;
-        loadct, 74
-        reverse_ct
-        spectro_plot, sigrange(data), time, freq, /xs, /ys, $
-                ytitle=' ', xtitle=' ', yr=[f1, f0], /noerase, XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", $
-                position=posit, /normal, xr=[time[0], time[-1]]
+  utplot, time, freq, yr=[f1,f0], /xs, /ys, xtitle='Time (UT)', ytitle='Frequency (MHz)', $
+          title=' ', pos=posit, /normal, color=150, $
+          xr=[time[0], time[-1]]
+	
+  ;------------------------------------------;
+  ;            Plot spectrogram
+  ;
+  loadct, 74
+  reverse_ct
+  spectro_plot, sigrange(data), time, freq, /xs, /ys, $
+        ytitle=' ', xtitle=' ', yr=[f1, f0], /noerase, XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", $
+        position=posit, /normal, xr=[time[0], time[-1]]
 
 
 END
@@ -80,7 +81,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	;------------------------------------------;
 	;	Plot harmonic contour map. Plot below because I need f-t image coords for while loop plot below.
 	;
-	restore, 'hbone_map_H.sav'
+	restore, '~/nenuturb/savs/hbone_map_H.sav'
 	hdata = reverse(hdata, 2)  
 	hfreq = reverse(hfreq)     
 	hf0 = (where(hfreq ge f0*2.0))[0]
@@ -96,7 +97,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	;loadct, 0
 	;cursor, tpoint, fpoint, /data
 	;save, tpoint, fpoint, filename='herringbone_tfpoint_F.sav'
-	restore, 'herringbone_tfpoint_F.sav'
+	restore, '~/nenuturb/savs/herringbone_tfpoint_F.sav'
 
 	findex = (where(freq le fpoint))[0]
 	tindex = (where(utimes ge tpoint))[0]
@@ -111,6 +112,7 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 	set_line_color
 	iburst = data[itpeak, findex]
 	fburst = freq[findex]
+  tburst = utimes[itpeak]
 	while freq[findex] gt 21.02 do begin	
 		it0 = itpeak-tpix
         	it1 = itpeak+tpix
@@ -122,15 +124,18 @@ pro psd_typeIIb_drift, save=save, plot_ipsd=plot_ipsd, postscript=postscript, re
 		isample = data[itpeak, findex]
 		iburst = [iburst, isample]
 		fburst = [fburst, freq[findex]]
-		findex=findex+1
+		tburst = [tburst, utimes[itpeak]]
+    findex=findex+1
 	endwhile
 	
 	loadct, 0
   contour, alog10(smooth(hdatac, 10)), levels=[7.55], position=posit, /noerase, $
-      XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", xticklen=-1e-8, yticklen=-1e-8, thick=3,  color=0, /xs, /ys
+      XTICKFORMAT="(A1)", YTICKFORMAT="(A1)", xticklen=-1e-8, $
+      yticklen=-1e-8, thick=3,  color=0, /xs, /ys
 
 	freq = fburst
 	prof = iburst
+  save, iburst, fburst, tburst, filename='~/nenuturb/savs/a_drifter_fluxprof.sav' 
 	;---------------------------------------;
 	;	Now perform PSD on iburst
 	;	
